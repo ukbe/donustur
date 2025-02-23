@@ -70,24 +70,56 @@ A recycling project that tracks user contributions through QR code scans at smar
    - timestamp
    ```
 
-2. **API Routes**
+2. **Amplify API (GraphQL & REST)**
    ```
-   Authentication:
-   - POST /api/auth/signup
-   - POST /api/auth/signin
+   GraphQL APIs:
+   
+   Types:
+   - User
+   - Scan
+   - MarketplaceItem
+   - Transaction
 
-   Scans:
-   - POST /api/scans/verify
-   - GET /api/scans/history
+   Queries:
+   - getUser
+   - listScans
+   - listMarketplaceItems
+   - getTransactionHistory
+   
+   Mutations:
+   - createScan
+   - verifyToken
+   - purchaseItem
+   - createMarketplaceItem (admin)
+   - updateMarketplaceItem (admin)
 
-   Marketplace:
-   - GET /api/marketplace/items
-   - POST /api/marketplace/purchase
-   - POST /api/admin/marketplace/items (protected)
+   Amplify Functions (Lambda):
+   - handleQRScan
+     - Validates QR token
+     - Creates scan record
+     - Updates user credits
+   
+   - handlePurchase
+     - Validates credit balance
+     - Creates transaction
+     - Updates user credits
+   
+   - adminMarketplace
+     - Handles marketplace item management
+     - Protected by admin authorization
+   
+   - notificationHandler
+     - Manages email notifications
+     - Handles system notifications
+   ```
 
-   User:
-   - GET /api/user/credits
-   - GET /api/user/transactions
+3. **Authentication Flow**
+   ```
+   Amplify Auth:
+   - Cognito User Pool
+   - Identity Pool for fine-grained access
+   - OAuth flow for social providers (optional)
+   - Admin group for privileged access
    ```
 
 ### Phase 3: Core Features Implementation
