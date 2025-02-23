@@ -35,7 +35,7 @@ export default function Home() {
             </div>
             <div className="feature-block">
               <h3 className="text-xl font-semibold leading-7 text-gray-900">Ödüller Kazanın</h3>
-              <p className="mt-2 text-base leading-7 text-gray-600">Biriken puanlarınızı çeşitli ödüller için kullanın veya STK'lara bağışlayın.</p>
+              <p className="mt-2 text-base leading-7 text-gray-600">Biriken puanlarınızı çeşitli ödüller için kullanın veya STK&apos;lara bağışlayın.</p>
             </div>
             <div className="feature-block">
               <h3 className="text-xl font-semibold leading-7 text-gray-900">Çevreye Katkıda Bulunun</h3>
