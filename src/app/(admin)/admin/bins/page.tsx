@@ -12,6 +12,7 @@ export default function BinsPage() {
   const [newBin, setNewBin] = useState({
     name: '',
     location: '',
+    credits: 10,
   });
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -23,10 +24,11 @@ export default function BinsPage() {
         id: binId,
         name: newBin.name,
         location: newBin.location,
+        credits: newBin.credits,
         status: 'active',
       });
       setBins([bin, ...bins]);
-      setNewBin({name: '', location: ''});
+      setNewBin({name: '', location: '', credits: 10});
     } catch (error) {
       console.error('Error creating bin:', error);
     } finally {
@@ -90,6 +92,14 @@ export default function BinsPage() {
               required
               value={newBin.location}
               onChange={(e) => setNewBin({...newBin, location: e.target.value})}
+            />
+            <TextField
+              label="Puan Değeri"
+              name="credits"
+              type="number"
+              required
+              value={newBin.credits}
+              onChange={(e) => setNewBin({...newBin, credits: parseInt(e.target.value, 10)})}
             />
             <Flex justifyContent="flex-end" gap="0.5rem">
               <Button

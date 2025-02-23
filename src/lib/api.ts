@@ -33,6 +33,7 @@ export type Bin = {
   id: string;
   name: string;
   location: string;
+  credits: number;
   status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;

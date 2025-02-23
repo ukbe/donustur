@@ -36,6 +36,7 @@ const schema = a.schema({
     .model({
       name: a.string().required(),
       location: a.string().required(),
+      credits: a.integer().required(),
       status: a.string().required(),
       createdAt: a.datetime().required(),
       updatedAt: a.datetime().required(),
