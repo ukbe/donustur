@@ -1,30 +1,31 @@
 import Logo from '@/components/common/Logo';
+import {PencilSquareIcon, QrCodeIcon, LinkIcon, LockClosedIcon, StarIcon} from '@heroicons/react/24/outline';
 
 const steps = [
   {
     title: 'Hesap Oluşturun',
     description: 'Dönüştür uygulamasını kullanmaya başlamak için ücretsiz bir hesap oluşturun.',
-    icon: '📝',
+    icon: PencilSquareIcon,
   },
   {
     title: 'QR Kodu Tarayın',
     description: 'Akıllı geri dönüşüm kutusundaki QR kodu telefonunuzun kamerası ile tarayın.',
-    icon: '📱',
+    icon: QrCodeIcon,
   },
   {
     title: 'Bağlantıya Tıklayın',
     description: 'Telefonunuzda beliren bağlantıya tıklayarak Dönüştür uygulamasına yönlendirilirsiniz.',
-    icon: '🔗',
+    icon: LinkIcon,
   },
   {
     title: 'Giriş Yapın',
     description: 'Eğer oturum açık değilse, hesabınıza giriş yapın.',
-    icon: '🔐',
+    icon: LockClosedIcon,
   },
   {
     title: 'Puanları Kazanın',
     description: 'Geri dönüşüm işleminiz onaylanır ve hesabınıza puanlar eklenir.',
-    icon: '⭐',
+    icon: StarIcon,
   },
 ];
 
@@ -44,7 +45,7 @@ export default function AboutPage() {
               <div key={index} className="relative pl-16">
                 <dt className="text-2xl font-semibold leading-7 text-gray-900">
                   <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-green-600">
-                    <span className="text-xl text-white">{step.icon}</span>
+                    <step.icon aria-hidden="true" className="size-6 text-white" />
                   </div>
                   {step.title}
                 </dt>

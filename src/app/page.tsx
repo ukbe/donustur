@@ -49,7 +49,7 @@ export default function Home() {
 
       {/* Feature Blocks */}
       <div className="bg-gray-50/50 py-24 sm:py-32">
-        <div className="mx-auto max-w-7xl sm:mt-20 lg:mt-24">
+        <div className="mx-auto max-w-7xl sm:mt-20 lg:mt-24 px-6 lg:px-8">
           <dl className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-3">
             {features.map((feature) => (
               <div key={feature.name} className="flex flex-col">
