@@ -1,0 +1,22 @@
+I need your help to develop a project with requirements below.
+
+Codebase
+- Based on Next.js App Router
+- Uses AWS Amplify and UI components.
+- Developed using Typescript
+- Supports linting with eslint
+- Cognito, DynamoDB, Lambda functions are the basic components
+- Uses Tailwind CSS and Tailwind UI components.
+
+Project:
+- A recyclling project that tracks the user's contibution via the QR code scans through the smart trachcans.
+- Users collect credits on each scan.
+- The current point and latest scans are displayed with a nice looking clean dashboard.
+- Application provides a marketplace where users can spend their credits on different options like donating to NGOs.
+- The application administrator can add the marketplace items in a pr.viledged area.
+- When users scan the QR code it will open the application with a token in the url.
+- It will allow the user to create an account or sign in.
+- The token should be kept in the query until it's tracked by the application.
+
+We need to make a step by step plan to make sure each iteration is consistent with the requirements.
+Now let's make the plan but not start coding until we have a clear plan.
