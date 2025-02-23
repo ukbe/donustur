@@ -1,44 +1,70 @@
 'use client';
 
 import {useAuthenticator} from '@aws-amplify/ui-react';
+import {useRouter} from 'next/navigation';
 import {QrCodeIcon, ArrowTrendingUpIcon, GiftIcon} from '@heroicons/react/24/outline';
 import Logo from '@/components/common/Logo';
-
-const stats = [
-  {name: 'Toplam Puan', value: '2,450', icon: ArrowTrendingUpIcon},
-  {name: 'Toplam İşlem', value: '12', icon: QrCodeIcon},
-  {name: 'Kullanılan Puan', value: '500', icon: GiftIcon},
-];
-
-const recentScans = [
-  {
-    id: 1,
-    location: 'Kadıköy Geri Dönüşüm',
-    timestamp: '2 saat önce',
-    points: '+50',
-  },
-  {
-    id: 2,
-    location: 'Üsküdar Geri Dönüşüm',
-    timestamp: '3 gün önce',
-    points: '+50',
-  },
-  // Add more dummy data as needed
-];
+import {useEffect, useState} from 'react';
+import {getUserScans, getUserStats, type Scan} from '@/lib/api';
 
 export default function DashboardPage() {
   const {user, signOut} = useAuthenticator();
+  const router = useRouter();
+  const [scans, setScans] = useState<Scan[]>([]);
+  const [stats, setStats] = useState({
+    totalCredits: 0,
+    totalScans: 0,
+    usedCredits: 0,
+  });
+
+  useEffect(() => {
+    if (user?.userId) {
+      loadUserData(user.userId);
+    }
+  }, [user]);
+
+  async function loadUserData(userId: string) {
+    try {
+      const [userScans, userStats] = await Promise.all([
+        getUserScans(userId),
+        getUserStats(userId),
+      ]);
+      setScans(userScans);
+      setStats(userStats);
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  }
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace('/');
+  };
+
+  const statsDisplay = [
+    {name: 'Toplam Puan', value: stats.totalCredits.toString(), icon: ArrowTrendingUpIcon},
+    {name: 'Toplam İşlem', value: stats.totalScans.toString(), icon: QrCodeIcon},
+    {name: 'Kullanılan Puan', value: stats.usedCredits.toString(), icon: GiftIcon},
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50/50">
       {/* Navigation Header */}
       <div className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-20 justify-between items-center">
-            <Logo className="h-8" width={120} height={40} />
-            <button onClick={signOut} className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-              Çıkış Yap
-            </button>
+          <div className="flex items-center">
+            <div className="flex-1" /> {/* Left spacer */}
+            <div className="flex justify-center">
+              <Logo className="h-15" width={135} height={45} />
+            </div>
+            <div className="flex-1 flex justify-end"> {/* Right aligned button */}
+              <button
+                onClick={handleSignOut}
+                className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              >
+                Çıkış Yap
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -58,7 +84,7 @@ export default function DashboardPage() {
 
         {/* Stats */}
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
-          {stats.map((stat) => (
+          {statsDisplay.map((stat) => (
             <div key={stat.name} className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -92,11 +118,17 @@ export default function DashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
-                        {recentScans.map((scan) => (
+                        {scans.map((scan) => (
                           <tr key={scan.id}>
-                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{scan.location}</td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{scan.timestamp}</td>
-                            <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-green-600 font-semibold">{scan.points}</td>
+                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                              {scan.binLocation}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                              {new Date(scan.timestamp).toLocaleString('tr-TR')}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-4 text-sm text-right text-green-600 font-semibold">
+                              +{scan.credits}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

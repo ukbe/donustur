@@ -15,7 +15,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Dönüştür",
-  description: "Geri dönüşüm ile ödüller kazanın",
+  description: "Geri dönüşüm ile dünyayı değiştirin",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

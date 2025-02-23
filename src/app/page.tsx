@@ -10,7 +10,7 @@ const features = [
   },
   {
     name: 'Ödüller Kazanın',
-    description: 'Biriken puanlarınızı çeşitli ödüller için kullanın veya STK&apos;lara bağışlayın.',
+    description: "Biriken puanlarınızı çeşitli ödüller için kullanın veya STK'lara bağışlayın.",
     href: '#',
     icon: GiftIcon,
   },
