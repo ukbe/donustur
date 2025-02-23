@@ -5,19 +5,19 @@ const features = [
   {
     name: 'QR Kod ile Kolay Kullanım',
     description: 'Akıllı geri dönüşüm kutularındaki QR kodları okutarak puan kazanın.',
-    href: '#',
+    href: '/about',
     icon: QrCodeIcon,
   },
   {
     name: 'Ödüller Kazanın',
     description: "Biriken puanlarınızı çeşitli ödüller için kullanın veya STK'lara bağışlayın.",
-    href: '#',
+    href: '/about',
     icon: GiftIcon,
   },
   {
     name: 'Çevreye Katkıda Bulunun',
     description: 'Geri dönüşüm yaparak sürdürülebilir bir gelecek için adım atın.',
-    href: '#',
+    href: '/about',
     icon: GlobeAltIcon,
   },
 ];
@@ -34,7 +34,7 @@ export default function Home() {
             <p className="mt-6 text-lg leading-8 text-gray-600">Her geri dönüşüm ile puan kazanın, çevreye katkıda bulunun ve ödüller kazanın.</p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <a
-                href="/signup"
+                href="/signin"
                 className="rounded-md bg-green-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
               >
                 Hemen Başla

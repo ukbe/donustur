@@ -27,4 +27,28 @@ export async function getUserStats(userId: string) {
     totalScans: scans.length,
     usedCredits: 0, // Will implement with marketplace
   };
+}
+
+export type Bin = {
+  id: string;
+  name: string;
+  location: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function createBin(bin: Omit<Bin, 'createdAt' | 'updatedAt'>): Promise<Bin> {
+  const now = new Date().toISOString();
+  const response = await client.models.Bin.create({
+    ...bin,
+    createdAt: now,
+    updatedAt: now,
+  });
+  return response.data as Bin;
+}
+
+export async function listBins(): Promise<Bin[]> {
+  const response = await client.models.Bin.list();
+  return response.data as unknown as Bin[];
 } 

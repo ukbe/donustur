@@ -16,14 +16,13 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner().to(['read', 'update']),
-      allow.guest().to(['read']),
       allow.group('admin').to(['read', 'update']),
     ]),
 
   Scan: a
     .model({
       userId: a.string().required(),
-      timestamp: a.datetime().required(),
+      timestamp: a.string().required(),
       credits: a.integer().required(),
       binLocation: a.string().required(),
       tokenId: a.string().required(),
@@ -31,6 +30,19 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.owner().to(['read']),
       allow.group('admin').to(['read']),
+    ]),
+
+  Bin: a
+    .model({
+      name: a.string().required(),
+      location: a.string().required(),
+      status: a.string().required(),
+      createdAt: a.datetime().required(),
+      updatedAt: a.datetime().required(),
+    })
+    .authorization((allow) => [
+      allow.authenticated().to(['read']),
+      allow.group('admin').to(['create', 'read', 'update', 'delete']),
     ]),
 
   MarketplaceItem: a
@@ -43,6 +55,7 @@ const schema = a.schema({
       createdAt: a.datetime().required(),
     })
     .authorization((allow) => [
+      allow.authenticated().to(['read']),
       allow.guest().to(['read']),
       allow.group('admin').to(['create', 'read', 'update', 'delete']),
     ]),
@@ -65,7 +78,11 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: "identityPool",
+    defaultAuthorizationMode: 'userPool',
+    // API Key is used for a.allow.public()
+    apiKeyAuthorizationMode: {
+      expiresInDays: 30,
+    },
   },
 });
 

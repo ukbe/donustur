@@ -6,6 +6,7 @@ import {QrCodeIcon, ArrowTrendingUpIcon, GiftIcon} from '@heroicons/react/24/out
 import Logo from '@/components/common/Logo';
 import {useEffect, useState} from 'react';
 import {getUserScans, getUserStats, type Scan} from '@/lib/api';
+import {fetchAuthSession} from 'aws-amplify/auth';
 
 export default function DashboardPage() {
   const {user, signOut} = useAuthenticator();
@@ -16,12 +17,22 @@ export default function DashboardPage() {
     totalScans: 0,
     usedCredits: 0,
   });
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (user?.userId) {
       loadUserData(user.userId);
     }
   }, [user]);
+
+  useEffect(() => {
+    async function checkAdmin() {
+      const session = await fetchAuthSession();
+      const groups = (session.tokens?.accessToken.payload['cognito:groups'] as string[]) || [];
+      setIsAdmin(groups.includes('admin'));
+    }
+    checkAdmin();
+  }, []);
 
   async function loadUserData(userId: string) {
     try {
@@ -73,7 +84,18 @@ export default function DashboardPage() {
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
             <h1 className="text-xl font-semibold leading-6 text-gray-900">Hoş geldiniz, {user?.signInDetails?.loginId}</h1>
-            <p className="mt-2 text-sm text-gray-700">Geri dönüşüm aktivitelerinizi takip edin ve puanlarınızı kullanın.</p>
+            
+            <p className="mt-2 text-sm text-gray-700">
+              Geri dönüşüm aktivitelerinizi takip edin ve puanlarınızı kullanın.
+              {isAdmin && (
+                <>
+                  {' • '}
+                  <a href="/admin" className="text-green-600 hover:text-green-500">
+                    Yönetici Paneli
+                  </a>
+                </>
+              )}
+            </p>
           </div>
           <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
             <a href="/marketplace" className="block rounded-md bg-green-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-green-500">

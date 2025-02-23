@@ -22,17 +22,7 @@ export default function SignUpPage() {
           initialState="signUp"
           components={{
             Header() {
-              return <AuthHeader title="Kayıt" subtitle="Hesap oluşturun" />;
-            },
-          }}
-          services={{
-            async validateCustomSignUp(formData) {
-              if (!formData.email) {
-                return {
-                  email: ['Email adresi gerekli'],
-                };
-              }
-              return undefined;
+              return <AuthHeader title="Kayıt Ol" subtitle="Hesap oluşturun" />;
             },
           }}
         />
