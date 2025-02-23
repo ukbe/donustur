@@ -1,4 +1,26 @@
 import Logo from '@/components/common/Logo';
+import {QrCodeIcon, GiftIcon, GlobeAltIcon} from '@heroicons/react/24/outline';
+
+const features = [
+  {
+    name: 'QR Kod ile Kolay Kullanım',
+    description: 'Akıllı geri dönüşüm kutularındaki QR kodları okutarak puan kazanın.',
+    href: '#',
+    icon: QrCodeIcon,
+  },
+  {
+    name: 'Ödüller Kazanın',
+    description: 'Biriken puanlarınızı çeşitli ödüller için kullanın veya STK&apos;lara bağışlayın.',
+    href: '#',
+    icon: GiftIcon,
+  },
+  {
+    name: 'Çevreye Katkıda Bulunun',
+    description: 'Geri dönüşüm yaparak sürdürülebilir bir gelecek için adım atın.',
+    href: '#',
+    icon: GlobeAltIcon,
+  },
+];
 
 export default function Home() {
   return (
@@ -27,21 +49,27 @@ export default function Home() {
 
       {/* Feature Blocks */}
       <div className="bg-gray-50/50 py-24 sm:py-32">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-            <div className="feature-block">
-              <h3 className="text-xl font-semibold leading-7 text-gray-900">QR Kod ile Kolay Kullanım</h3>
-              <p className="mt-2 text-base leading-7 text-gray-600">Akıllı geri dönüşüm kutularındaki QR kodları okutarak puan kazanın.</p>
-            </div>
-            <div className="feature-block">
-              <h3 className="text-xl font-semibold leading-7 text-gray-900">Ödüller Kazanın</h3>
-              <p className="mt-2 text-base leading-7 text-gray-600">Biriken puanlarınızı çeşitli ödüller için kullanın veya STK&apos;lara bağışlayın.</p>
-            </div>
-            <div className="feature-block">
-              <h3 className="text-xl font-semibold leading-7 text-gray-900">Çevreye Katkıda Bulunun</h3>
-              <p className="mt-2 text-base leading-7 text-gray-600">Geri dönüşüm yaparak sürdürülebilir bir gelecek için adım atın.</p>
-            </div>
-          </div>
+        <div className="mx-auto max-w-7xl sm:mt-20 lg:mt-24">
+          <dl className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-3">
+            {features.map((feature) => (
+              <div key={feature.name} className="flex flex-col">
+                <dt className="text-base/7 font-semibold text-gray-900">
+                  <div className="mb-6 flex size-10 items-center justify-center rounded-lg bg-green-500">
+                    <feature.icon aria-hidden="true" className="size-6 text-white" />
+                  </div>
+                  {feature.name}
+                </dt>
+                <dd className="mt-1 flex flex-auto flex-col text-base/7 text-gray-600">
+                  <p className="flex-auto">{feature.description}</p>
+                  <p className="mt-6">
+                    <a href={feature.href} className="text-sm/6 font-semibold">
+                      daha fazla bilgi <span aria-hidden="true">→</span>
+                    </a>
+                  </p>
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </div>
     </div>
