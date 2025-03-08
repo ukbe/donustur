@@ -1,11 +1,13 @@
 import type { CustomMessageTriggerHandler } from "aws-lambda";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
-const s3Client = new S3Client({});
+const s3Client = new S3Client({ region: process.env.REGION });
 
 export const handler: CustomMessageTriggerHandler = async (event) => {
+  console.log('Custom message event:', JSON.stringify(event, null, 2));
+  
   const command = new GetObjectCommand({
-    Bucket: process.env.TEMPLATE_BUCKET_NAME,
+    Bucket: process.env.DONUSTUR_TEMPLATES_BUCKET_NAME,
     Key: `${process.env.OBJECT_PATH}email-templates/auth/${event.triggerSource}.html`
   });
   
