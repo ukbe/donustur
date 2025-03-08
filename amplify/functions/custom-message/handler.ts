@@ -30,7 +30,7 @@ export const handler: CustomMessageTriggerHandler = async (event) => {
       subject = "Eposta adresini doğrula - Dönüştür";
       break;
     case "CustomMessage_ForgotPassword":
-      subject = "Şifrenizi sıfırla - Dönüştür";
+      subject = "Şifreni sıfırla - Dönüştür";
       break;
     case "CustomMessage_AdminCreateUser":
       subject = "Eposta adresini doğrula - Dönüştür";

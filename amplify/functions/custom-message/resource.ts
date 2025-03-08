@@ -1,11 +1,11 @@
 import { defineFunction } from '@aws-amplify/backend';
-import { env } from '$amplify/env/custom-message';
 
 export const customMessage = defineFunction({
-  name: "custom-message",
-  resourceGroupName: 'auth',
+  name: 'custom-message',
+  // Instead of directly using the bucket name, set the environment variable to a lookup pattern
+  // that AWS will resolve during deployment
   environment: {
-    OBJECT_PATH: "auth/",
-    TEMPLATE_BUCKET_NAME: env.DONUSTUR_TEMPLATES_BUCKET_NAME
+    // This is a pseudo variable that will be replaced by Amplify Gen2 during deployment
+    BUCKET_NAME: '#{Resources.Storage.donustur-templates.Name}'
   }
 });
