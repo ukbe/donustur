@@ -8,7 +8,7 @@ export const handler: CustomMessageTriggerHandler = async (event) => {
   
   const command = new GetObjectCommand({
     Bucket: process.env.DONUSTUR_TEMPLATES_BUCKET_NAME,
-    Key: `${process.env.OBJECT_PATH}email-templates/auth/${event.triggerSource}.html`
+    Key: `email-templates/auth/${event.triggerSource}.html`
   });
   
   const response = await s3Client.send(command);

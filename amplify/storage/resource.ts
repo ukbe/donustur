@@ -4,6 +4,6 @@ import { customMessage } from '../functions/custom-message/resource';
 export const defaultBucket = defineStorage({
   name: 'donustur-templates',
   access: (allow) => ({
-    'function/*': [allow.resource(customMessage).to(['write'])]
+    'email-templates/*': [allow.resource(customMessage).to(['read'])]
   })
 });
