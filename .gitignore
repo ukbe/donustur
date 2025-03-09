@@ -44,3 +44,7 @@ next-env.d.ts
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+
+# Seeds
+public/test-qr.png
+scripts/test-bin-id.txt

@@ -3,6 +3,7 @@
 import {useEffect, useState} from 'react';
 import {UsersIcon, QrCodeIcon, CurrencyDollarIcon, ShoppingBagIcon} from '@heroicons/react/24/outline';
 import {listBins} from '@/lib/api';
+import {fetchAuthSession} from 'aws-amplify/auth';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
@@ -15,20 +16,66 @@ export default function AdminDashboardPage() {
   });
 
   useEffect(() => {
-    async function loadStats() {
+    // Check authentication
+    const checkAuth = async () => {
       try {
-        const bins = await listBins();
-        setStats((prev) => ({
-          ...prev,
-          totalBins: bins.length,
-          activeBins: bins.filter((bin) => bin.status === 'active').length,
-        }));
+        console.log('Checking auth session...');
+        const auth = await fetchAuthSession();
+        console.log('Auth session retrieved:', auth);
+
+        // Check if user is in admin group
+        const groups = (auth.tokens?.accessToken.payload['cognito:groups'] as string[]) || [];
+        console.log('User groups:', groups);
+
+        if (!groups.includes('admin')) {
+          console.error('User is not an admin');
+          window.location.href = '/';
+        }
       } catch (error) {
-        console.error('Error loading stats:', error);
+        console.error('Authentication error:', error);
+
+        // Check if it's an error with fetchAuthSession function not found
+        if (error instanceof TypeError && (error.message.includes('is not a function') || error.message.includes('fetchAuthSession'))) {
+          console.error('fetchAuthSession function not found - this could be due to AWS Amplify not being properly initialized');
+          // Try to import from the Amplify global object
+          try {
+            // Direct import of fetchAuthSession
+            const {fetchAuthSession: directFetchAuth} = await import('aws-amplify/auth');
+
+            console.log('Re-imported fetchAuthSession function');
+            if (typeof directFetchAuth === 'function') {
+              console.log('Using directly imported fetchAuthSession');
+              const auth = await directFetchAuth();
+              console.log('Auth session obtained:', auth);
+            } else {
+              console.error('Re-imported fetchAuthSession is not a function');
+            }
+          } catch (importError) {
+            console.error('Error importing Amplify modules:', importError);
+          }
+        }
+
+        // Redirect on any auth error
+        window.location.href = '/';
       }
-    }
-    loadStats();
+    };
+
+    checkAuth();
+    loadBins();
   }, []);
+
+  const loadBins = async () => {
+    try {
+      const bins = await listBins();
+      setStats((prev) => ({
+        ...prev,
+        totalBins: bins.length,
+        activeBins: bins.filter((bin) => bin.status === 'active').length,
+      }));
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
 
   const statCards = [
     {

@@ -2,18 +2,25 @@
 
 import {Authenticator, useAuthenticator} from '@aws-amplify/ui-react';
 import {useEffect} from 'react';
-import {useRouter} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 import AuthHeader from '@/components/auth/AuthHeader';
 
 export default function SignInPage() {
   const {authStatus} = useAuthenticator();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const binId = searchParams.get('bin');
 
   useEffect(() => {
     if (authStatus === 'authenticated') {
-      router.replace('/dashboard');
+      // Check if coming from a scan
+      if (binId) {
+        router.replace(`/scan?bin=${binId}`);
+      } else {
+        router.replace('/dashboard');
+      }
     }
-  }, [authStatus, router]);
+  }, [authStatus, router, binId]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white">
