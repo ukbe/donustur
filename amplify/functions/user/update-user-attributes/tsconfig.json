@@ -17,15 +17,13 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
-    "typeRoots": ["../node_modules/@types", "./layers/manage-users/nodejs/node_modules/@types"],
+    "typeRoots": ["./node_modules/@types"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@manage-users": ["./layers/manage-users/nodejs/src"]
-    },
-    "types": ["node"]
+      "@manage-users": ["../../../layers/manage-users/src"]
+    }
   },
-  "include": ["functions/**/src/**/*.ts", "layers/**/src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,67 +1,59 @@
-import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
+import { a, defineData } from '@aws-amplify/backend';
+import { addUserToGroup } from '../functions/user/add-user-to-group/resource';
+import { removeUserFromGroup } from '../functions/user/remove-user-from-group/resource';
+import { updateUserAttributes } from '../functions/user/update-user-attributes/resource';
+import { enableUser } from '../functions/user/enable-user/resource';
+import { disableUser } from '../functions/user/disable-user/resource';
+import { listUsers } from '../functions/user/list-users/resource';
+import { getUser } from '../functions/user/get-user/resource';
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any unauthenticated user can "create", "read", "update", 
-and "delete" any "Todo" records.
+adding a new field to your Todo table below and see it reflected in your API.
 =========================================================================*/
+
 const schema = a.schema({
-  User: a
+  Bin: a
     .model({
-      email: a.string().required(),
-      totalCredits: a.integer().required().default(0),
-      createdAt: a.datetime().required(),
-      updatedAt: a.datetime().required(),
+      name: a.string().required(),
+      location: a.string().required(),
+      credits: a.integer().required(),
+      status: a.enum(['active', 'inactive']),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
     })
     .authorization((allow) => [
-      allow.owner().to(['read', 'update']),
-      allow.group('admin').to(['read', 'update']),
+      allow.authenticated().to(['read']),
+      allow.group('admin').to(['create', 'update', 'delete']),
     ]),
 
   Scan: a
     .model({
       userId: a.string().required(),
-      timestamp: a.string().required(),
-      credits: a.integer().required(),
+      binId: a.string().required(),
       binLocation: a.string().required(),
-      tokenId: a.string().required(),
+      credits: a.integer().required(),
+      timestamp: a.datetime().required(),
     })
     .authorization((allow) => [
       allow.owner().to(['read']),
       allow.group('admin').to(['read']),
     ]),
 
-  Bin: a
+  User: a
     .model({
-      name: a.string().required(),
-      location: a.string().required(),
-      credits: a.integer().required(),
-      status: a.string().required(),
-      createdAt: a.datetime().required(),
-      updatedAt: a.datetime().required(),
+      email: a.string().required(),
+      name: a.string(),
+      totalCredits: a.integer().required(),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
     })
     .authorization((allow) => [
-      allow.authenticated().to(['read']),
-      allow.group('admin').to(['create', 'read', 'update', 'delete']),
+      allow.owner().to(['read', 'update']),
+      allow.group('admin').to(['read', 'update']),
     ]),
 
-  MarketplaceItem: a
-    .model({
-      title: a.string().required(),
-      description: a.string().required(),
-      creditCost: a.integer().required(),
-      type: a.string().required(),
-      status: a.string().required(),
-      createdAt: a.datetime().required(),
-    })
-    .authorization((allow) => [
-      allow.authenticated().to(['read']),
-      allow.guest().to(['read']),
-      allow.group('admin').to(['create', 'read', 'update', 'delete']),
-    ]),
-
-  Transaction: a
+  Redemption: a
     .model({
       userId: a.string().required(),
       itemId: a.string().required(),
@@ -72,9 +64,71 @@ const schema = a.schema({
       allow.owner().to(['read']),
       allow.group('admin').to(['read']),
     ]),
-});
 
-export type Schema = ClientSchema<typeof schema>;
+  // User management operations
+  adminListUsers: a
+    .query()
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(listUsers))
+    .returns(a.json()),
+
+  adminGetUser: a
+    .query()
+    .arguments({
+      id: a.string().required(),
+    })
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(getUser))
+    .returns(a.json()),
+
+  updateUserAttributes: a
+    .mutation()
+    .arguments({
+      id: a.string().required(),
+      attributes: a.json().required(),
+    })
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(updateUserAttributes))
+    .returns(a.json()),
+
+  addUserToGroup: a
+    .mutation()
+    .arguments({
+      userId: a.string().required(),
+      groupName: a.string().required(),
+    })
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(addUserToGroup))
+    .returns(a.json()),
+
+  removeUserFromGroup: a
+    .mutation()
+    .arguments({
+      userId: a.string().required(),
+      groupName: a.string().required(),
+    })
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(removeUserFromGroup))
+    .returns(a.json()),
+
+  enableUser: a
+    .mutation()
+    .arguments({
+      id: a.string().required(),
+    })
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(enableUser))
+    .returns(a.json()),
+
+  disableUser: a
+    .mutation()
+    .arguments({
+      id: a.string().required(),
+    })
+    .authorization((allow) => [allow.group("admin")])
+    .handler(a.handler.function(disableUser))
+    .returns(a.json())
+});
 
 export const data = defineData({
   schema,

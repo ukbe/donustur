@@ -2,10 +2,10 @@
   "compilerOptions": {
     "target": "ES2018",
     "module": "commonjs",
-    "lib": ["es2018"],
+    "lib": ["es2018", "dom"],
     "declaration": true,
     "strict": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "strictNullChecks": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
@@ -17,15 +17,12 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
-    "typeRoots": ["../node_modules/@types", "./layers/manage-users/nodejs/node_modules/@types"],
+    "typeRoots": ["./node_modules/@types"],
+    "outDir": "dist",
+    "rootDir": "src",
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "@manage-users": ["./layers/manage-users/nodejs/src"]
-    },
-    "types": ["node"]
+    "skipLibCheck": true
   },
-  "include": ["functions/**/src/**/*.ts", "layers/**/src/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
+  "include": ["src"]
 }
