@@ -66,6 +66,21 @@ const schema = a.schema({
       allow.group('admin').to(['read']),
     ]),
 
+  Cause: a
+    .model({
+      name: a.string().required(),
+      description: a.string().required(),
+      logoUrl: a.string().required(),
+      credits: a.integer().required(), // Credits needed to support this cause
+      status: a.enum(['active', 'inactive']),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.authenticated().to(['read']),
+      allow.group('admin').to(['create', 'update', 'delete']),
+    ]),
+
   // User management operations
   adminListUsers: a
     .query()

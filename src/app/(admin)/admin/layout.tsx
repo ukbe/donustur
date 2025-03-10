@@ -3,7 +3,7 @@
 import {useAuthenticator} from '@aws-amplify/ui-react';
 import {useRouter, usePathname} from 'next/navigation';
 import {useEffect} from 'react';
-import {HomeIcon, QrCodeIcon, UserGroupIcon, ChartBarIcon} from '@heroicons/react/24/outline';
+import {HomeIcon, QrCodeIcon, UserGroupIcon, ChartBarIcon, HeartIcon} from '@heroicons/react/24/outline';
 import Logo from '@/components/common/Logo';
 import {fetchAuthSession} from 'aws-amplify/auth';
 import {NotificationProvider} from '@/components/ui/NotificationContext';
@@ -12,6 +12,7 @@ const navigation = [
   {name: 'Dashboard', href: '/admin', icon: HomeIcon},
   {name: 'Geri Dönüşüm Kutuları', href: '/admin/bins', icon: QrCodeIcon},
   {name: 'Kullanıcılar', href: '/admin/users', icon: UserGroupIcon},
+  {name: 'Amaçlar', href: '/admin/causes', icon: HeartIcon},
   {name: 'Raporlar', href: '/admin/reports', icon: ChartBarIcon},
 ];
 

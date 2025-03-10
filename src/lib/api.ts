@@ -480,4 +480,121 @@ export async function enableUser(userId: string): Promise<void> {
     console.error('Error enabling user:', error);
     throw error;
   }
+}
+
+export type Cause = {
+  id: string;
+  name: string;
+  description: string;
+  logoUrl: string;
+  credits: number;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Create a new cause
+export async function createCause(causeData: {
+  name: string;
+  description: string;
+  logoUrl: string;
+  credits: number;
+  status: 'active' | 'inactive';
+}): Promise<Cause> {
+  const response = await client.models.Cause.create(causeData);
+  return response.data as Cause;
+}
+
+// List all causes
+export async function listCauses(activeOnly = false): Promise<Cause[]> {
+  try {
+    let filter = {};
+    if (activeOnly) {
+      filter = { status: { eq: 'active' } };
+    }
+    
+    const response = await client.models.Cause.list({ filter });
+    const causes = response.data as Cause[];
+    
+    // Sort by recently created first
+    return causes.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  } catch (error) {
+    console.error('Error listing causes:', error);
+    return [];
+  }
+}
+
+// Get a specific cause
+export async function getCause(causeId: string): Promise<Cause | null> {
+  try {
+    const response = await client.models.Cause.get({ id: causeId });
+    return response.data as Cause || null;
+  } catch (error) {
+    console.error('Error getting cause:', error);
+    return null;
+  }
+}
+
+// Update a cause
+export async function updateCause(
+  causeId: string,
+  data: {
+    name?: string;
+    description?: string;
+    logoUrl?: string;
+    credits?: number;
+    status?: 'active' | 'inactive';
+  }
+): Promise<Cause> {
+  const response = await client.models.Cause.update({
+    id: causeId,
+    ...data
+  });
+  return response.data as Cause;
+}
+
+// Delete a cause
+export async function deleteCause(causeId: string): Promise<void> {
+  try {
+    await client.models.Cause.delete({ id: causeId });
+  } catch (error) {
+    console.error('Error deleting cause:', error);
+    throw error;
+  }
+}
+
+// User redemption - Support a cause
+export async function redeemForCause(userId: string, causeId: string, credits: number): Promise<void> {
+  try {
+    // 1. Check user has enough credits
+    const userResponse = await client.models.User.get({ id: userId }) as any;
+    const user = userResponse.data;
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    if (user.totalCredits < credits) {
+      throw new Error('Not enough credits');
+    }
+    
+    // 2. Create a redemption record
+    await client.models.Redemption.create({
+      userId,
+      itemId: causeId,
+      credits,
+      timestamp: new Date().toISOString()
+    });
+    
+    // 3. Update user's credits
+    await updateUser(userId, {
+      credits: user.totalCredits - credits
+    });
+    
+  } catch (error) {
+    console.error('Error redeeming for cause:', error);
+    throw error;
+  }
 } 
