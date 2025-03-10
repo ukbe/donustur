@@ -1,6 +1,5 @@
 import {generateClient} from 'aws-amplify/api';
 import type {Schema} from '../../amplify/data/resource';
-import './amplify-types'; // Import type extensions
 import { 
   listUsersQuery, 
   getUserQuery,
@@ -13,12 +12,6 @@ import {
 } from './amplify-types';
 
 export const client = generateClient<Schema>();
-
-// Remove unused typedClient
-// const typedClient = client as typeof client & {
-//   queries: typeof client.queries & CustomQueries;
-//   mutations: typeof client.mutations & CustomMutations;
-// };
 
 export type Scan = {
   id: string;
@@ -299,7 +292,7 @@ export async function listUsers(): Promise<User[]> {
     });
     
     // Parse the AWSJSON response
-    const responseJson = JSON.parse(result.data?.adminListUsers || '{}');
+    const responseJson = JSON.parse((result as { data?: { adminListUsers?: string } }).data?.adminListUsers || '{}');
     
     // Check if the response indicates an error
     if (responseJson.success === false) {
@@ -321,12 +314,12 @@ export async function getUser(userId: string): Promise<User | null> {
     // Use GraphQL query directly
     const response = await client.graphql({
       query: getUserQuery,
-      variables: { id: userId },
+      variables: { userId },
       authMode: 'userPool'
     });
     
     // Parse the AWSJSON response
-    const responseJson = JSON.parse(response.data?.adminGetUser || '{}');
+    const responseJson = JSON.parse((response as { data?: { adminGetUser?: string } }).data?.adminGetUser || '{}');
     
     // Check if the response indicates an error
     if (responseJson.success === false) {
@@ -350,20 +343,19 @@ export async function updateUser(
   }
 ): Promise<User | null> {
   try {
-    console.log('API: Updating user with ID:', userId, 'data:', data);
+    console.log('API: Updating user attributes for user:', userId, data);
     
-    // Use GraphQL mutation directly
     const response = await client.graphql({
       query: updateUserAttributesMutation,
-      variables: {
-        id: userId,
-        attributes: JSON.stringify(data)  // Convert to AWSJSON string
+      variables: { 
+        userId, 
+        ...data 
       },
       authMode: 'userPool'
     });
     
     // Parse the AWSJSON response
-    const result = JSON.parse(response.data?.updateUserAttributes || '{}') as UserManagementResponse;
+    const result = JSON.parse((response as { data?: { updateUserAttributes?: string } }).data?.updateUserAttributes || '{}') as UserManagementResponse;
     
     if (!result?.success) {
       throw new Error(result?.message || 'Failed to update user');
@@ -379,20 +371,19 @@ export async function updateUser(
 // Add user to group (admin only)
 export async function addUserToGroup(userId: string, groupName: string): Promise<void> {
   try {
-    console.log(`API: Adding user ${userId} to group ${groupName}`);
+    console.log('API: Adding user to group:', userId, groupName);
     
-    // Use GraphQL mutation directly
     const response = await client.graphql({
       query: addUserToGroupMutation,
-      variables: {
-        userId: userId,
-        groupName: groupName
+      variables: { 
+        userId, 
+        groupName 
       },
       authMode: 'userPool'
     });
     
     // Parse the AWSJSON response
-    const result = JSON.parse(response.data?.addUserToGroup || '{}') as UserManagementResponse;
+    const result = JSON.parse((response as { data?: { addUserToGroup?: string } }).data?.addUserToGroup || '{}') as UserManagementResponse;
     
     if (!result?.success) {
       throw new Error(result?.message || 'Failed to add user to group');
@@ -406,20 +397,19 @@ export async function addUserToGroup(userId: string, groupName: string): Promise
 // Remove user from group (admin only)
 export async function removeUserFromGroup(userId: string, groupName: string): Promise<void> {
   try {
-    console.log(`API: Removing user ${userId} from group ${groupName}`);
+    console.log('API: Removing user from group:', userId, groupName);
     
-    // Use GraphQL mutation directly
     const response = await client.graphql({
       query: removeUserFromGroupMutation,
-      variables: {
-        userId: userId,
-        groupName: groupName
+      variables: { 
+        userId, 
+        groupName 
       },
       authMode: 'userPool'
     });
     
     // Parse the AWSJSON response
-    const result = JSON.parse(response.data?.removeUserFromGroup || '{}') as UserManagementResponse;
+    const result = JSON.parse((response as { data?: { removeUserFromGroup?: string } }).data?.removeUserFromGroup || '{}') as UserManagementResponse;
     
     if (!result?.success) {
       throw new Error(result?.message || 'Failed to remove user from group');
@@ -433,19 +423,16 @@ export async function removeUserFromGroup(userId: string, groupName: string): Pr
 // Disable user (admin only)
 export async function disableUser(userId: string): Promise<void> {
   try {
-    console.log('API: Disabling user with ID:', userId);
+    console.log('API: Disabling user:', userId);
     
-    // Use GraphQL mutation directly
     const response = await client.graphql({
       query: disableUserMutation,
-      variables: {
-        id: userId
-      },
+      variables: { userId },
       authMode: 'userPool'
     });
     
     // Parse the AWSJSON response
-    const result = JSON.parse(response.data?.disableUser || '{}') as UserManagementResponse;
+    const result = JSON.parse((response as { data?: { disableUser?: string } }).data?.disableUser || '{}') as UserManagementResponse;
     
     if (!result?.success) {
       throw new Error(result?.message || 'Failed to disable user');
@@ -459,19 +446,16 @@ export async function disableUser(userId: string): Promise<void> {
 // Enable user (admin only)
 export async function enableUser(userId: string): Promise<void> {
   try {
-    console.log('API: Enabling user with ID:', userId);
+    console.log('API: Enabling user:', userId);
     
-    // Use GraphQL mutation directly
     const response = await client.graphql({
       query: enableUserMutation,
-      variables: {
-        id: userId
-      },
+      variables: { userId },
       authMode: 'userPool'
     });
     
     // Parse the AWSJSON response
-    const result = JSON.parse(response.data?.enableUser || '{}') as UserManagementResponse;
+    const result = JSON.parse((response as { data?: { enableUser?: string } }).data?.enableUser || '{}') as UserManagementResponse;
     
     if (!result?.success) {
       throw new Error(result?.message || 'Failed to enable user');
@@ -505,28 +489,26 @@ export async function createCause(causeData: {
   return response.data as Cause;
 }
 
-// List all causes
+// List all causes, optionally filtering to only active ones
 export async function listCauses(activeOnly = false): Promise<Cause[]> {
   try {
-    let filter = {};
+    let filter = undefined;
     if (activeOnly) {
-      filter = { status: { eq: 'active' } };
+      filter = {
+        status: { eq: 'active' }
+      }
     }
     
     const response = await client.models.Cause.list({ filter });
     const causes = response.data as Cause[];
     
-    // Sort by recently created first
-    return causes.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return causes;
   } catch (error) {
     console.error('Error listing causes:', error);
-    return [];
+    throw error;
   }
 }
 
-// Get a specific cause
 export async function getCause(causeId: string): Promise<Cause | null> {
   try {
     const response = await client.models.Cause.get({ id: causeId });
@@ -537,7 +519,6 @@ export async function getCause(causeId: string): Promise<Cause | null> {
   }
 }
 
-// Update a cause
 export async function updateCause(
   causeId: string,
   data: {
@@ -551,11 +532,11 @@ export async function updateCause(
   const response = await client.models.Cause.update({
     id: causeId,
     ...data
-  });
-  return response.data as Cause;
+  }) as unknown as { data: Cause };
+  
+  return response.data;
 }
 
-// Delete a cause
 export async function deleteCause(causeId: string): Promise<void> {
   try {
     await client.models.Cause.delete({ id: causeId });
@@ -569,15 +550,16 @@ export async function deleteCause(causeId: string): Promise<void> {
 export async function redeemForCause(userId: string, causeId: string, credits: number): Promise<void> {
   try {
     // 1. Check user has enough credits
-    const userResponse = await client.models.User.get({ id: userId }) as any;
+    // Cast to unknown first to avoid TypeScript errors with model return types
+    const userResponse = await client.models.User.get({ id: userId }) as unknown as { data: User };
     const user = userResponse.data;
     
     if (!user) {
       throw new Error('User not found');
     }
     
-    if (user.totalCredits < credits) {
-      throw new Error('Not enough credits');
+    if (user.credits < credits) {
+      throw new Error('Insufficient credits');
     }
     
     // 2. Create a redemption record
@@ -586,11 +568,11 @@ export async function redeemForCause(userId: string, causeId: string, credits: n
       itemId: causeId,
       credits,
       timestamp: new Date().toISOString()
-    });
+    }) as unknown;
     
     // 3. Update user's credits
     await updateUser(userId, {
-      credits: user.totalCredits - credits
+      credits: user.credits - credits
     });
     
   } catch (error) {
