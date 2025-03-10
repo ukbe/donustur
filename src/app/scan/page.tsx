@@ -16,16 +16,13 @@ export default function ScanPage() {
   const [credits, setCredits] = useState(0);
 
   useEffect(() => {
+    // No bin ID provided, redirect to home
     if (!binId) {
-      setStatus('error');
-      setMessage('Geçersiz QR kod. Lütfen tekrar deneyin.');
+      router.push('/');
       return;
     }
 
-    if (authStatus !== 'authenticated' && authStatus !== 'unauthenticated') {
-      return; // Wait for auth to initialize
-    }
-
+    // Not authenticated, store bin ID and redirect to login
     if (authStatus === 'unauthenticated') {
       // Save bin ID in session storage and redirect to login
       sessionStorage.setItem('pendingBinId', binId);
@@ -36,6 +33,7 @@ export default function ScanPage() {
     if (authStatus === 'authenticated' && user) {
       processScan(binId, user.userId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [binId, authStatus, user, router]);
 
   async function processScan(binId: string, userId: string) {

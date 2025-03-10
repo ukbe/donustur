@@ -21,6 +21,7 @@ export default function BinsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingBin, setEditingBin] = useState<Bin | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [newBin, setNewBin] = useState({
     name: '',
     location: '',
@@ -30,9 +31,14 @@ export default function BinsPage() {
   
   useEffect(() => {
     loadBins();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   async function loadBins() {
+    // Prevent duplicate requests
+    if (loading) return;
+    
+    setLoading(true);
     try {
       console.log('Loading bins...');
       const binsList = await listBins();
@@ -48,82 +54,59 @@ export default function BinsPage() {
         console.log('Direct GraphQL error detected in loadBins:', errorObj);
       }
       
-      // Log the original error for debugging
-      if (error instanceof Error) {
-        console.error('Original error message in loadBins:', error.message);
-        try {
-          // Try to parse the error message as JSON
-          const parsedError = JSON.parse(error.message);
-          console.error('Parsed error JSON in loadBins:', parsedError);
-        } catch {
-          // Not JSON, ignore
-        }
-      }
-      
-      // Parse and show error
-      const errorMessage = parseError(error);
-      showNotification('error', 'Yükleme Hatası', errorMessage);
+      // Show notification
+      showNotification('error', 'Yükleme Hatası', 'Geri dönüşüm kutuları yüklenirken bir hata oluştu.');
+    } finally {
+      setLoading(false);
     }
   }
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsCreating(true);
     
+    // Prevent duplicate requests
+    if (loading) return;
+    
+    setLoading(true);
     try {
-      console.log('Creating new bin with data:', newBin);
+      console.log('Creating new bin:', newBin);
       
+      // Generate a UUID for the bin
       const binId = uuidv4();
       
-      // Create bin data
-      const binData = {
+      // Create bin with generated ID
+      const bin = await createBin({
         id: binId,
         name: newBin.name,
         location: newBin.location,
         credits: newBin.credits,
         status: 'active' as const,
-      };
+      });
       
-      // Create the bin
-      console.log('Sending bin data to API:', binData);
-      const bin = await createBin(binData);
-      console.log('Bin created successfully:', bin);
+      // Add the newly created bin to the state
+      setBins(prevBins => [...prevBins, bin]);
       
-      // Reset the form
-      setNewBin({ name: '', location: '', credits: 10 });
-      
-      // Manually add the new bin to the list
-      setBins(prevBins => [bin, ...prevBins]);
+      // Reset form and close modal
+      setNewBin({
+        name: '',
+        location: '',
+        credits: 10,
+      });
+      setIsCreating(false);
       
       // Show success notification
-      showNotification('success', 'Başarılı', 'Geri dönüşüm kutusu başarıyla oluşturuldu');
+      showNotification('success', 'Başarılı', 'Geri dönüşüm kutusu başarıyla oluşturuldu.');
       
-      // Close the create form
-      setIsCreating(false);
+      // Generate QR code PDF for the new bin
+      await generateQRPDF(bin);
     } catch (error) {
       console.error('Error creating bin:', error);
       
-      // First check directly for GraphQL error response format
-      if (typeof error === 'object' && error !== null && 'errors' in error) {
-        const errorObj = error as { errors?: Array<{errorType?: string; message?: string}> };
-        console.log('Direct GraphQL error detected:', errorObj);
-      }
-      
       // Parse and show error
       const errorMessage = parseError(error);
-      showNotification('error', 'İşlem Hatası', errorMessage);
-      
-      // Log the original error for debugging
-      if (error instanceof Error) {
-        console.error('Original error message:', error.message);
-        try {
-          // Try to parse the error message as JSON
-          const parsedError = JSON.parse(error.message);
-          console.error('Parsed error JSON:', parsedError);
-        } catch {
-          // Not JSON, ignore
-        }
-      }
+      showNotification('error', 'Oluşturma Hatası', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -193,6 +176,10 @@ export default function BinsPage() {
       return;
     }
     
+    // Prevent duplicate requests
+    if (loading) return;
+    
+    setLoading(true);
     try {
       // First get the logo as a data URL
       const logoUrl = '/donustur.png'; // Assuming logo is in public folder
@@ -234,7 +221,8 @@ export default function BinsPage() {
       document.body.appendChild(tempDiv);
       
       // Create QR code content with better styling and logo
-      const qrUrl = `${window.location.origin}/scan?bin=${bin.id}`;
+      const cleanQrUrl = new URL(`/scan?bin=${bin.id}`, window.location.origin).toString();
+      
       tempDiv.innerHTML = `
         <div style="width: 100%; height: 100%; position: relative; font-family: Arial, sans-serif;">
           <!-- Header section with green background -->
@@ -266,10 +254,16 @@ export default function BinsPage() {
               <div id="qr-code-container" style="background-color: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"></div>
             </div>
             
-            <!-- Manual URL section - Make this stand out more -->
-            <div style="margin-top: 25px; text-align: center; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <!-- Manual URL section with fixed small font size -->
+            <div style="margin-top: 25px; text-align: center; padding: 10px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
               <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #334155;">Alternatif Manuel Giriş</p>
-              <p style="margin: 0; font-size: 14px; word-break: break-all; color: #0284c7; font-family: monospace; background-color: #f1f5f9; padding: 8px; border-radius: 4px;">${qrUrl}</p>
+              
+              <!-- URL with fixed small font -->
+              <div style="background-color: #e0f2fe; padding: 10px; border-radius: 4px; text-align: center; overflow: hidden; white-space: nowrap;">
+                <a href="${cleanQrUrl}" style="font-family: 'Courier New', monospace; height: 20px; font-size: 10px; color: #0f172a; font-weight: bold; text-decoration: none; display: inline-block; max-width: 100%; overflow: auto; white-space: nowrap;">${cleanQrUrl}</a>
+              </div>
+              
+              <p style="margin: 8px 0 0 0; font-size: 12px; color: #64748b;">Yukarıdaki linki tarayıcınıza kopyalayın veya tıklayın.</p>
             </div>
             
             <!-- Footer -->
@@ -289,7 +283,7 @@ export default function BinsPage() {
       
       // Create QR code directly on canvas
       const qr = await import('qrcode');
-      await qr.toCanvas(qrCanvas, qrUrl, {
+      await qr.toCanvas(qrCanvas, cleanQrUrl, {
         width: 200,
         margin: 0,
         color: {
@@ -346,7 +340,9 @@ export default function BinsPage() {
       showNotification('success', 'Başarılı', 'QR kod PDF olarak indirildi');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      showNotification('error', 'Hata', 'QR kod oluşturulurken bir hata oluştu');
+      showNotification('error', 'PDF Oluşturma Hatası', 'QR kod PDF dosyası oluşturulurken bir hata oluştu');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -365,15 +361,18 @@ export default function BinsPage() {
       return;
     }
     
+    // Prevent duplicate requests
+    if (loading) return;
+    
+    setLoading(true);
     try {
-      console.log('Updating bin with data:', editingBin);
+      console.log('Updating bin:', editingBin);
       
       // Update the bin
       const updatedBin = await updateBin(editingBin.id, {
         name: editingBin.name,
         location: editingBin.location,
         credits: editingBin.credits,
-        status: editingBin.status as 'active' | 'inactive',
       });
       
       // Update local state
@@ -395,18 +394,24 @@ export default function BinsPage() {
       // Parse and show error
       const errorMessage = parseError(error);
       showNotification('error', 'Güncelleme Hatası', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
   
   // Handle bin status toggle
   const toggleBinStatus = async (bin: Bin) => {
+    // Prevent duplicate requests
+    if (loading) return;
+    
+    setLoading(true);
     try {
       const newStatus = bin.status === 'active' ? 'inactive' : 'active';
       
+      console.log(`Changing bin status: ${bin.id} to ${newStatus}`);
+      
       // Update the bin status
-      const updatedBin = await updateBin(bin.id, {
-        status: newStatus as 'active' | 'inactive',
-      });
+      const updatedBin = await updateBin(bin.id, { status: newStatus });
       
       // Update local state
       setBins(prevBins => 
@@ -416,13 +421,15 @@ export default function BinsPage() {
       );
       
       // Show success notification
-      showNotification('success', 'Başarılı', `Kutu durumu ${newStatus === 'active' ? 'aktif' : 'pasif'} olarak güncellendi`);
+      showNotification('success', 'Durum Değişikliği', `Kutu ${newStatus === 'active' ? 'aktif' : 'pasif'} olarak işaretlendi`);
     } catch (error) {
       console.error('Error toggling bin status:', error);
       
       // Parse and show error
       const errorMessage = parseError(error);
       showNotification('error', 'Durum Değiştirme Hatası', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -433,7 +440,13 @@ export default function BinsPage() {
   
   // Handle delete bin
   const handleDeleteBin = async (binId: string) => {
+    // Prevent duplicate requests
+    if (loading) return;
+    
+    setLoading(true);
     try {
+      console.log('Deleting bin:', binId);
+      
       // Delete the bin
       await deleteBin(binId);
       
@@ -451,6 +464,8 @@ export default function BinsPage() {
       // Parse and show error
       const errorMessage = parseError(error);
       showNotification('error', 'Silme Hatası', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -463,11 +478,21 @@ export default function BinsPage() {
             Geri dönüşüm kutularını yönetin ve QR kodlarını indirin.
           </p>
         </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none space-x-3">
+          <Button
+            onClick={() => loadBins()}
+            backgroundColor="green"
+            color="white"
+            isLoading={loading}
+          >
+            Yenile
+          </Button>
+
           <Button
             onClick={() => setIsCreating(true)}
             backgroundColor="green"
             color="white"
+            isDisabled={loading}
           >
             Yeni Kutu Ekle
           </Button>
@@ -511,7 +536,7 @@ export default function BinsPage() {
               >
                 İptal
               </Button>
-              <Button type="submit" backgroundColor="green" color="white">
+              <Button type="submit" backgroundColor="green" color="white" isLoading={loading}>
                 Güncelle
               </Button>
             </Flex>
@@ -553,7 +578,7 @@ export default function BinsPage() {
               >
                 İptal
               </Button>
-              <Button type="submit" backgroundColor="green" color="white">
+              <Button type="submit" backgroundColor="green" color="white" isLoading={loading}>
                 Kaydet
               </Button>
             </Flex>
@@ -578,83 +603,111 @@ export default function BinsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {bins.map((bin) => bin && (
-                    <tr key={bin.id || 'unknown'}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        {bin.name || 'Isimsiz'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {bin.location || 'Belirtilmemiş'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {bin.credits ?? 0}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <button 
-                          onClick={() => toggleBinStatus(bin)}
-                          className={`inline-flex items-center rounded-md ${
-                            bin.status === 'active' 
-                              ? 'bg-green-50 text-green-700 ring-green-600/20' 
-                              : 'bg-red-50 text-red-700 ring-red-600/20'
-                          } px-2 py-1 text-xs font-medium ring-1 ring-inset cursor-pointer`}
-                        >
-                          {bin.status === 'active' ? 'aktif' : 'pasif'}
-                        </button>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <Button
-                          onClick={() => bin && generateQRPDF(bin)}
-                          backgroundColor="white"
-                          color="black"
-                          border="1px solid #d1d5db"
-                        >
-                          QR PDF İndir
-                        </Button>
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        {confirmDelete === bin.id ? (
-                          <div className="flex justify-end space-x-2">
-                            <Button
-                              onClick={() => setConfirmDelete(null)}
-                              backgroundColor="white"
-                              color="black"
-                              border="1px solid #d1d5db"
-                              size="small"
-                            >
-                              İptal
-                            </Button>
-                            <Button
-                              onClick={() => handleDeleteBin(bin.id)}
-                              backgroundColor="red"
-                              color="white"
-                              size="small"
-                            >
-                              Onayla
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex justify-end space-x-2">
-                            <button
-                              type="button"
-                              onClick={() => handleEditClick(bin)}
-                              className="rounded bg-white p-1 text-gray-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              <PencilIcon className="h-5 w-5" aria-hidden="true" />
-                              <span className="sr-only">Düzenle</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteConfirm(bin.id)}
-                              className="rounded bg-white p-1 text-gray-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
-                            >
-                              <TrashIcon className="h-5 w-5" aria-hidden="true" />
-                              <span className="sr-only">Sil</span>
-                            </button>
-                          </div>
-                        )}
+                  {loading && bins.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-10 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <svg className="animate-spin h-8 w-8 text-blue-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span className="text-sm text-gray-500">Yükleniyor...</span>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : bins.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-10 text-center">
+                        <p className="text-sm text-gray-500">Henüz geri dönüşüm kutusu bulunmuyor.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    bins.map((bin) => bin && (
+                      <tr key={bin.id || 'unknown'}>
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                          {bin.name || 'Isimsiz'}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {bin.location || 'Belirtilmemiş'}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {bin.credits ?? 0}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          <button 
+                            onClick={() => toggleBinStatus(bin)}
+                            className={`inline-flex items-center rounded-md ${
+                              bin.status === 'active' 
+                                ? 'bg-green-50 text-green-700 ring-green-600/20' 
+                                : 'bg-red-50 text-red-700 ring-red-600/20'
+                            } px-2 py-1 text-xs font-medium ring-1 ring-inset cursor-pointer ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={loading}
+                          >
+                            {bin.status === 'active' ? 'aktif' : 'pasif'}
+                          </button>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          <Button
+                            onClick={() => bin && generateQRPDF(bin)}
+                            backgroundColor="white"
+                            color="black"
+                            border="1px solid #d1d5db"
+                            isLoading={loading}
+                            isDisabled={loading}
+                          >
+                            QR PDF İndir
+                          </Button>
+                        </td>
+                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          {confirmDelete === bin.id ? (
+                            <div className="flex justify-end space-x-2">
+                              <Button
+                                onClick={() => setConfirmDelete(null)}
+                                backgroundColor="white"
+                                color="black"
+                                border="1px solid #d1d5db"
+                                size="small"
+                                isDisabled={loading}
+                              >
+                                İptal
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteBin(bin.id)}
+                                backgroundColor="red"
+                                color="white"
+                                size="small"
+                                isLoading={loading}
+                                isDisabled={loading}
+                              >
+                                Onayla
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex justify-end space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => handleEditClick(bin)}
+                                className="rounded bg-white p-1 text-gray-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                disabled={loading}
+                              >
+                                <PencilIcon className={`h-5 w-5 ${loading ? 'opacity-50' : ''}`} aria-hidden="true" />
+                                <span className="sr-only">Düzenle</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteConfirm(bin.id)}
+                                className="rounded bg-white p-1 text-gray-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                disabled={loading}
+                              >
+                                <TrashIcon className={`h-5 w-5 ${loading ? 'opacity-50' : ''}`} aria-hidden="true" />
+                                <span className="sr-only">Sil</span>
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

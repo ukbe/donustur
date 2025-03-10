@@ -1,7 +1,24 @@
 import {generateClient} from 'aws-amplify/api';
 import type {Schema} from '../../amplify/data/resource';
+import './amplify-types'; // Import type extensions
+import { 
+  listUsersQuery, 
+  getUserQuery,
+  updateUserAttributesMutation,
+  addUserToGroupMutation,
+  removeUserFromGroupMutation,
+  enableUserMutation,
+  disableUserMutation,
+  UserManagementResponse
+} from './amplify-types';
 
 export const client = generateClient<Schema>();
+
+// Remove unused typedClient
+// const typedClient = client as typeof client & {
+//   queries: typeof client.queries & CustomQueries;
+//   mutations: typeof client.mutations & CustomMutations;
+// };
 
 export type Scan = {
   id: string;
@@ -127,16 +144,13 @@ export type ScanInput = {
   timestamp: string;
 };
 
-export async function createScan(scan: ScanInput): Promise<Scan> {
-  // Generate a random token ID
-  const tokenId = Math.random().toString(36).substring(2, 15);
-  
+export async function createScan(scan: ScanInput): Promise<Scan> {  
   const response = await client.models.Scan.create({
     userId: scan.userId,
     timestamp: scan.timestamp,
     credits: scan.credits,
     binLocation: scan.binLocation,
-    tokenId,
+    binId: scan.binId
   });
   
   // Update user's total credits
@@ -257,6 +271,213 @@ export async function deleteBin(binId: string): Promise<void> {
       }
     }
     
+    throw error;
+  }
+}
+
+export type User = {
+  id: string;
+  username: string;
+  email: string;
+  name?: string;
+  credits: number;
+  userGroups: string[];
+  enabled?: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// List all users (admin only)
+export async function listUsers(): Promise<User[]> {
+  try {
+    console.log('API: Listing users');
+    
+    // Use GraphQL query directly with type assertion
+    const result = await client.graphql({
+      query: listUsersQuery,
+      authMode: 'userPool'
+    });
+    
+    // Parse the AWSJSON response
+    const responseJson = JSON.parse(result.data?.adminListUsers || '{}');
+    
+    // Check if the response indicates an error
+    if (responseJson.success === false) {
+      throw new Error(responseJson.message || 'Failed to list users');
+    }
+    
+    return responseJson.users || [];
+  } catch (error) {
+    console.error('Error listing users:', error);
+    throw error;
+  }
+}
+
+// Get a single user by ID (admin only)
+export async function getUser(userId: string): Promise<User | null> {
+  try {
+    console.log('API: Getting user with ID:', userId);
+    
+    // Use GraphQL query directly
+    const response = await client.graphql({
+      query: getUserQuery,
+      variables: { id: userId },
+      authMode: 'userPool'
+    });
+    
+    // Parse the AWSJSON response
+    const responseJson = JSON.parse(response.data?.adminGetUser || '{}');
+    
+    // Check if the response indicates an error
+    if (responseJson.success === false) {
+      throw new Error(responseJson.message || 'Failed to get user');
+    }
+    
+    return responseJson.user || null;
+  } catch (error) {
+    console.error('Error getting user:', error);
+    throw error;
+  }
+}
+
+// Update user attributes (admin only)
+export async function updateUser(
+  userId: string,
+  data: {
+    name?: string;
+    credits?: number;
+    email?: string;
+  }
+): Promise<User | null> {
+  try {
+    console.log('API: Updating user with ID:', userId, 'data:', data);
+    
+    // Use GraphQL mutation directly
+    const response = await client.graphql({
+      query: updateUserAttributesMutation,
+      variables: {
+        id: userId,
+        attributes: JSON.stringify(data)  // Convert to AWSJSON string
+      },
+      authMode: 'userPool'
+    });
+    
+    // Parse the AWSJSON response
+    const result = JSON.parse(response.data?.updateUserAttributes || '{}') as UserManagementResponse;
+    
+    if (!result?.success) {
+      throw new Error(result?.message || 'Failed to update user');
+    }
+    
+    return result.user || null;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+}
+
+// Add user to group (admin only)
+export async function addUserToGroup(userId: string, groupName: string): Promise<void> {
+  try {
+    console.log(`API: Adding user ${userId} to group ${groupName}`);
+    
+    // Use GraphQL mutation directly
+    const response = await client.graphql({
+      query: addUserToGroupMutation,
+      variables: {
+        userId: userId,
+        groupName: groupName
+      },
+      authMode: 'userPool'
+    });
+    
+    // Parse the AWSJSON response
+    const result = JSON.parse(response.data?.addUserToGroup || '{}') as UserManagementResponse;
+    
+    if (!result?.success) {
+      throw new Error(result?.message || 'Failed to add user to group');
+    }
+  } catch (error) {
+    console.error('Error adding user to group:', error);
+    throw error;
+  }
+}
+
+// Remove user from group (admin only)
+export async function removeUserFromGroup(userId: string, groupName: string): Promise<void> {
+  try {
+    console.log(`API: Removing user ${userId} from group ${groupName}`);
+    
+    // Use GraphQL mutation directly
+    const response = await client.graphql({
+      query: removeUserFromGroupMutation,
+      variables: {
+        userId: userId,
+        groupName: groupName
+      },
+      authMode: 'userPool'
+    });
+    
+    // Parse the AWSJSON response
+    const result = JSON.parse(response.data?.removeUserFromGroup || '{}') as UserManagementResponse;
+    
+    if (!result?.success) {
+      throw new Error(result?.message || 'Failed to remove user from group');
+    }
+  } catch (error) {
+    console.error('Error removing user from group:', error);
+    throw error;
+  }
+}
+
+// Disable user (admin only)
+export async function disableUser(userId: string): Promise<void> {
+  try {
+    console.log('API: Disabling user with ID:', userId);
+    
+    // Use GraphQL mutation directly
+    const response = await client.graphql({
+      query: disableUserMutation,
+      variables: {
+        id: userId
+      },
+      authMode: 'userPool'
+    });
+    
+    // Parse the AWSJSON response
+    const result = JSON.parse(response.data?.disableUser || '{}') as UserManagementResponse;
+    
+    if (!result?.success) {
+      throw new Error(result?.message || 'Failed to disable user');
+    }
+  } catch (error) {
+    console.error('Error disabling user:', error);
+    throw error;
+  }
+}
+
+// Enable user (admin only)
+export async function enableUser(userId: string): Promise<void> {
+  try {
+    console.log('API: Enabling user with ID:', userId);
+    
+    // Use GraphQL mutation directly
+    const response = await client.graphql({
+      query: enableUserMutation,
+      variables: {
+        id: userId
+      },
+      authMode: 'userPool'
+    });
+    
+    // Parse the AWSJSON response
+    const result = JSON.parse(response.data?.enableUser || '{}') as UserManagementResponse;
+    
+    if (!result?.success) {
+      throw new Error(result?.message || 'Failed to enable user');
+    }
+  } catch (error) {
+    console.error('Error enabling user:', error);
     throw error;
   }
 } 

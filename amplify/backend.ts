@@ -3,6 +3,7 @@ import { auth } from './auth/resource';
 import { defaultBucket } from './storage/resource';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { data } from './data/resource';
 import { addUserToGroup } from './functions/user/add-user-to-group/resource';
 import { disableUser } from './functions/user/disable-user/resource';
@@ -41,11 +42,44 @@ export const userManagementLayer = new lambda.LayerVersion(backend.stack, 'Manag
   code: lambda.Code.fromAsset('./amplify/layers/manage-users/dist'),
 });
 
+// Get User Pool ID from the Auth resource
+const userPoolId = backend.auth.resources.userPool.userPoolId;
 
-backend.addUserToGroup.resources.lambda.addLayers(userManagementLayer);
-backend.disableUser.resources.lambda.addLayers(userManagementLayer);
-backend.enableUser.resources.lambda.addLayers(userManagementLayer);
-backend.getUser.resources.lambda.addLayers(userManagementLayer);
-backend.listUsers.resources.lambda.addLayers(userManagementLayer);
-backend.removeUserFromGroup.resources.lambda.addLayers(userManagementLayer);
-backend.updateUserAttributes.resources.lambda.addLayers(userManagementLayer);
+// Create a policy allowing access to Cognito operations
+const cognitoPolicy = new iam.PolicyStatement({
+  effect: iam.Effect.ALLOW,
+  actions: [
+    'cognito-idp:ListUsers',
+    'cognito-idp:AdminGetUser',
+    'cognito-idp:AdminAddUserToGroup',
+    'cognito-idp:AdminRemoveUserFromGroup',
+    'cognito-idp:AdminUpdateUserAttributes',
+    'cognito-idp:AdminEnableUser',
+    'cognito-idp:AdminDisableUser',
+    'cognito-idp:AdminListGroupsForUser'
+  ],
+  resources: [`arn:aws:cognito-idp:*:*:userpool/${userPoolId}`]
+});
+
+// Add layers and environment variables to all user management Lambda functions
+const userManagementFunctions = [
+  backend.addUserToGroup.resources.lambda,
+  backend.disableUser.resources.lambda,
+  backend.enableUser.resources.lambda,
+  backend.getUser.resources.lambda,
+  backend.listUsers.resources.lambda,
+  backend.removeUserFromGroup.resources.lambda,
+  backend.updateUserAttributes.resources.lambda
+];
+
+// Add layer and environment variables to each function
+userManagementFunctions.forEach(lambdaFunction => {
+  // Add the layer
+  lambdaFunction.addLayers(userManagementLayer);
+  
+  // Add environment variables
+  lambdaFunction.addEnvironment('AMPLIFY_AUTH_USERPOOL_ID', userPoolId);
+  
+  // Add IAM permissions
+  lambdaFunction.addToRolePolicy(cognitoPolicy);
+});

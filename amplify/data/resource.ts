@@ -1,4 +1,4 @@
-import { a, defineData } from '@aws-amplify/backend';
+import { a, ClientSchema, defineData } from '@aws-amplify/backend';
 import { addUserToGroup } from '../functions/user/add-user-to-group/resource';
 import { removeUserFromGroup } from '../functions/user/remove-user-from-group/resource';
 import { updateUserAttributes } from '../functions/user/update-user-attributes/resource';
@@ -6,6 +6,7 @@ import { enableUser } from '../functions/user/enable-user/resource';
 import { disableUser } from '../functions/user/disable-user/resource';
 import { listUsers } from '../functions/user/list-users/resource';
 import { getUser } from '../functions/user/get-user/resource';
+import { postConfirmation } from '../functions/post-confirmation/resource';
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
@@ -128,7 +129,8 @@ const schema = a.schema({
     .authorization((allow) => [allow.group("admin")])
     .handler(a.handler.function(disableUser))
     .returns(a.json())
-});
+})
+.authorization((allow) => [allow.resource(postConfirmation)]);
 
 export const data = defineData({
   schema,
@@ -136,6 +138,8 @@ export const data = defineData({
     defaultAuthorizationMode: "userPool",
   },
 });
+
+export type Schema = ClientSchema<typeof schema>;
 
 /*== STEP 2 ===============================================================
 Go to your frontend source code. From your client-side code, generate a

@@ -42,9 +42,13 @@ export function init(config?: AWS.CognitoIdentityServiceProvider.ClientConfigura
  * Helper to get user pool ID from environment
  */
 export function getUserPoolId(): string {
-  const userPoolId = process.env.USER_POOL_ID;
+  // Check for the environment variable that we set in the backend.ts file
+  const userPoolId = process.env.AMPLIFY_AUTH_USERPOOL_ID;
+                    
   if (!userPoolId) {
-    throw new Error('USER_POOL_ID environment variable is not set');
+    // Log all environment variables to help debug
+    console.log('Environment variables:', JSON.stringify(process.env));
+    throw new Error('AMPLIFY_AUTH_USERPOOL_ID environment variable is not set');
   }
   return userPoolId;
 }
