@@ -75,10 +75,10 @@ const userManagementFunctions = [
 // Add layer and environment variables to each function
 userManagementFunctions.forEach(lambdaFunction => {
   // Add the layer
-  lambdaFunction.addLayers(userManagementLayer);
+  (lambdaFunction as lambda.Function).addLayers(userManagementLayer);
   
   // Add environment variables
-  lambdaFunction.addEnvironment('AMPLIFY_AUTH_USERPOOL_ID', userPoolId);
+  (lambdaFunction as lambda.Function).addEnvironment('AMPLIFY_AUTH_USERPOOL_ID', userPoolId);
   
   // Add IAM permissions
   lambdaFunction.addToRolePolicy(cognitoPolicy);
