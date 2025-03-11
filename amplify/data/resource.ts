@@ -45,7 +45,7 @@ const schema = a.schema({
       updatedAt: a.datetime(),
     })
     .authorization((allow) => [
-      allow.authenticated().to(['read']),
+      allow.authenticated().to(['read', 'update']),
       allow.group('admin').to(['read', 'update', 'create', 'delete']),
     ]),
 
