@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from 'react';
 import {UsersIcon, QrCodeIcon, CurrencyDollarIcon, ShoppingBagIcon} from '@heroicons/react/24/outline';
-import {listBins} from '@/lib/api';
+import {getAdminStats} from '@/lib/api';
 import {fetchAuthSession} from 'aws-amplify/auth';
 
 export default function AdminDashboardPage() {
@@ -12,8 +12,11 @@ export default function AdminDashboardPage() {
     totalUsers: 0,
     totalScans: 0,
     totalCredits: 0,
-    totalRewards: 0,
+    totalRedemptions: 0,
   });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check authentication
@@ -30,6 +33,9 @@ export default function AdminDashboardPage() {
         if (!groups.includes('admin')) {
           console.error('User is not an admin');
           window.location.href = '/';
+        } else {
+          // Load admin stats after authentication is confirmed
+          loadAdminStats();
         }
       } catch (error) {
         console.error('Authentication error:', error);
@@ -47,33 +53,47 @@ export default function AdminDashboardPage() {
               console.log('Using directly imported fetchAuthSession');
               const auth = await directFetchAuth();
               console.log('Auth session obtained:', auth);
+
+              // Check if user is admin after re-import
+              const groups = (auth.tokens?.accessToken.payload['cognito:groups'] as string[]) || [];
+              if (groups.includes('admin')) {
+                loadAdminStats();
+              } else {
+                window.location.href = '/';
+              }
             } else {
               console.error('Re-imported fetchAuthSession is not a function');
+              window.location.href = '/';
             }
           } catch (importError) {
             console.error('Error importing Amplify modules:', importError);
+            window.location.href = '/';
           }
+        } else {
+          // Redirect on any auth error
+          window.location.href = '/';
         }
-
-        // Redirect on any auth error
-        window.location.href = '/';
       }
     };
 
     checkAuth();
-    loadBins();
   }, []);
 
-  const loadBins = async () => {
+  const loadAdminStats = async () => {
     try {
-      const bins = await listBins();
-      setStats((prev) => ({
-        ...prev,
-        totalBins: bins.length,
-        activeBins: bins.filter((bin) => bin.status === 'active').length,
-      }));
+      setLoading(true);
+      setError(null);
+
+      console.log('Loading admin statistics...');
+      const adminStats = await getAdminStats();
+
+      setStats(adminStats);
+      console.log('Admin statistics loaded:', adminStats);
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error('Error loading admin statistics:', error);
+      setError('Failed to load dashboard statistics. Please try again later.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,7 +118,7 @@ export default function AdminDashboardPage() {
     },
     {
       name: 'Verilen Ödül',
-      value: stats.totalRewards,
+      value: stats.totalRedemptions,
       icon: ShoppingBagIcon,
       description: 'Kullanılan ödül sayısı',
     },
@@ -110,6 +130,17 @@ export default function AdminDashboardPage() {
         <div className="sm:flex-auto">
           <h1 className="text-base font-semibold leading-6 text-gray-900">Yönetici Paneli</h1>
           <p className="mt-2 text-sm text-gray-700">Sistem genelindeki istatistikleri görüntüleyin.</p>
+        </div>
+        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+          {error && <span className="px-4 py-2 text-sm text-red-500">{error}</span>}
+          <button
+            type="button"
+            onClick={loadAdminStats}
+            disabled={loading}
+            className="block rounded-md bg-green-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:opacity-50"
+          >
+            {loading ? 'Yükleniyor...' : 'Yenile'}
+          </button>
         </div>
       </div>
 

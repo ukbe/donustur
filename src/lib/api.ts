@@ -723,4 +723,84 @@ export async function getUserById(userId: string): Promise<User | null> {
     console.error('Error getting user:', error);
     return null;
   }
+}
+
+// Get admin dashboard statistics
+export async function getAdminStats(): Promise<{
+  totalUsers: number;
+  totalScans: number;
+  totalCredits: number;
+  totalRedemptions: number;
+  activeBins: number;
+  totalBins: number;
+}> {
+  try {
+    console.log('API: Getting admin dashboard statistics');
+
+    // Fetch users
+    const users = await listUsers();
+    
+    // Initialize counters
+    let totalScans = 0;
+    let totalCredits = 0;
+    let totalRedemptions = 0;
+    
+    // Fetch scans from all users
+    const scanPromises = users.map(async (user) => {
+      const userScans = await getUserScans(user.id);
+      return userScans;
+    });
+    
+    const allUserScans = await Promise.all(scanPromises);
+    const scans = allUserScans.flat();
+    totalScans = scans.length;
+    
+    // Sum up credits from all scans
+    totalCredits = scans.reduce((sum, scan) => sum + scan.credits, 0);
+    
+    // Fetch redemptions for all users
+    const redemptionPromises = users.map(async (user) => {
+      try {
+        const redemptionsResponse = await client.models.Redemption.list({
+          filter: {
+            userId: {
+              eq: user.id
+            }
+          }
+        });
+        return redemptionsResponse.data;
+      } catch (error) {
+        console.error(`Error fetching redemptions for user ${user.id}:`, error);
+        return [];
+      }
+    });
+    
+    const allUserRedemptions = await Promise.all(redemptionPromises);
+    const redemptions = allUserRedemptions.flat();
+    totalRedemptions = redemptions.length;
+    
+    // Fetch bins
+    const bins = await listBins();
+    const activeBins = bins.filter(bin => bin.status === 'active').length;
+    
+    return {
+      totalUsers: users.length,
+      totalScans,
+      totalCredits,
+      totalRedemptions,
+      activeBins,
+      totalBins: bins.length
+    };
+  } catch (error) {
+    console.error('Error getting admin statistics:', error);
+    // Return default values in case of error
+    return {
+      totalUsers: 0,
+      totalScans: 0,
+      totalCredits: 0,
+      totalRedemptions: 0,
+      activeBins: 0,
+      totalBins: 0
+    };
+  }
 } 
