@@ -399,8 +399,8 @@ export async function updateUser(
     const response = await client.graphql({
       query: updateUserAttributesMutation,
       variables: { 
-        userId, 
-        ...data 
+        id: userId, 
+        attributes: JSON.stringify(data)
       },
       authMode: 'userPool'
     });

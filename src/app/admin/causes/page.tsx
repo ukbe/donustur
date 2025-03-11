@@ -5,7 +5,7 @@ import { TextField, TextAreaField, Button, Flex, View } from '@aws-amplify/ui-re
 import { createCause, listCauses, updateCause, deleteCause, type Cause } from '@/lib/api';
 import { useNotification } from '@/components/ui/NotificationContext';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import Image from 'next/image';
+import { uploadData, getUrl } from 'aws-amplify/storage';
 
 export default function CausesPage() {
   const [causes, setCauses] = useState<Cause[]>([]);
@@ -14,6 +14,10 @@ export default function CausesPage() {
   const [editingCause, setEditingCause] = useState<Cause | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploadedFilePath, setUploadedFilePath] = useState<string | null>(null);
+  const [signedImageUrls, setSignedImageUrls] = useState<Record<string, string>>({});
+  
   const [newCause, setNewCause] = useState({
     name: '',
     description: '',
@@ -34,6 +38,26 @@ export default function CausesPage() {
       const causesList = await listCauses();
       console.log('Causes loaded:', causesList);
       setCauses(causesList);
+      
+      // Load signed URLs for all logos
+      const urls: Record<string, string> = {};
+      for (const cause of causesList) {
+        if (cause.logoUrl) {
+          try {
+            const { url } = await getUrl({
+              path: cause.logoUrl,
+              options: {
+                bucket: 'donustur-templates',
+                expiresIn: 3600,
+              }
+            });
+            urls[cause.logoUrl] = url.toString();
+          } catch (e) {
+            console.error('Error getting signed URL for', cause.logoUrl, e);
+          }
+        }
+      }
+      setSignedImageUrls(urls);
     } catch (error) {
       console.error('Error loading causes:', error);
       setCauses([]); // Set to empty array on error
@@ -49,6 +73,65 @@ export default function CausesPage() {
     loadCauses();
   }, [loadCauses]);
 
+  // Handle file input change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    
+    if (file) {
+      // Create a preview URL
+      const objectUrl = URL.createObjectURL(file);
+      setLogoPreview(objectUrl);
+      
+      // Upload file immediately
+      handleFileUpload(file);
+      
+      // Clean up the object URL when the component unmounts
+      return () => URL.revokeObjectURL(objectUrl);
+    }
+  };
+  
+  // Function to upload logo file to S3
+  const handleFileUpload = async (file: File) => {
+    if (!file) {
+      return;
+    }
+    
+    try {
+      const fileName = `uploads/${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+      
+      console.log('Uploading file to S3:', fileName);
+      const result = await uploadData({
+        path: fileName,
+        data: file,
+        options: {
+          bucket: 'donustur-templates',
+          contentType: file.type,
+        }
+      }).result;
+      
+      console.log('File uploaded successfully:', result);
+      setUploadedFilePath(fileName);
+      
+      // Get signed URL for preview
+      const { url } = await getUrl({
+        path: fileName,
+        options: {
+          bucket: 'donustur-templates',
+          expiresIn: 3600,
+        }
+      });
+      
+      setLogoPreview(url.toString());
+      setSignedImageUrls(prev => ({
+        ...prev,
+        [fileName]: url.toString()
+      }));
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      showNotification('error', 'Yükleme Hatası', 'Dosya yüklenirken bir hata oluştu.');
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -57,13 +140,15 @@ export default function CausesPage() {
     
     setLoading(true);
     try {
-      console.log('Creating new cause:', newCause);
+      const logoUrl = uploadedFilePath || newCause.logoUrl;
+      
+      console.log('Creating new cause with logo:', logoUrl);
       
       // Create cause with generated ID
       const cause = await createCause({
         name: newCause.name,
         description: newCause.description,
-        logoUrl: newCause.logoUrl,
+        logoUrl: logoUrl,
         credits: newCause.credits,
         status: newCause.status,
       });
@@ -79,6 +164,8 @@ export default function CausesPage() {
         credits: 100,
         status: 'active',
       });
+      setLogoPreview(null);
+      setUploadedFilePath(null);
       setIsCreating(false);
       
       // Show success notification
@@ -96,6 +183,8 @@ export default function CausesPage() {
   // Start editing a cause
   const handleEditClick = (cause: Cause) => {
     setEditingCause(cause);
+    setLogoPreview(cause.logoUrl ? signedImageUrls[cause.logoUrl] : null);
+    setUploadedFilePath(null);
     setIsEditing(true);
   };
   
@@ -113,13 +202,16 @@ export default function CausesPage() {
     
     setLoading(true);
     try {
-      console.log('Updating cause:', editingCause);
+      // Use the uploaded file path if a new file was uploaded, otherwise keep the existing logo URL
+      const logoUrl = uploadedFilePath || editingCause.logoUrl;
+      
+      console.log('Updating cause with logo:', logoUrl);
       
       // Update the cause
       const updatedCause = await updateCause(editingCause.id, {
         name: editingCause.name,
         description: editingCause.description,
-        logoUrl: editingCause.logoUrl,
+        logoUrl: logoUrl,
         credits: editingCause.credits,
         status: editingCause.status,
       });
@@ -131,9 +223,11 @@ export default function CausesPage() {
         )
       );
       
-      // Close edit form
+      // Clean up
       setIsEditing(false);
       setEditingCause(null);
+      setLogoPreview(null);
+      setUploadedFilePath(null);
       
       // Show success notification
       showNotification('success', 'Başarılı', 'Amaç başarıyla güncellendi');
@@ -251,47 +345,89 @@ export default function CausesPage() {
             <TextField
               label="Amaç Adı"
               name="name"
+              placeholder="Amaç adını girin"
+              value={editingCause.name}
+              onChange={(e) => setEditingCause({ ...editingCause, name: e.target.value })}
               required
-              value={editingCause.name || ''}
-              onChange={(e) => setEditingCause({...editingCause, name: e.target.value})}
+              isDisabled={loading}
             />
+            
             <TextAreaField
               label="Açıklama"
               name="description"
+              placeholder="Amaç açıklamasını girin"
+              value={editingCause.description}
+              onChange={(e) => setEditingCause({ ...editingCause, description: e.target.value })}
               required
-              value={editingCause.description || ''}
-              onChange={(e) => setEditingCause({...editingCause, description: e.target.value})}
+              isDisabled={loading}
             />
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-600 hover:file:bg-green-100"
+                disabled={loading}
+              />
+              {logoPreview && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500 mb-1">Önizleme:</p>
+                  <div className="w-24 h-24 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain" />
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <TextField
-              label="Logo URL"
-              name="logoUrl"
-              required
-              value={editingCause.logoUrl || ''}
-              onChange={(e) => setEditingCause({...editingCause, logoUrl: e.target.value})}
-            />
-            <TextField
-              label="Gerekli Puan"
+              label="Puan Değeri"
               name="credits"
               type="number"
+              value={editingCause.credits.toString()}
+              onChange={(e) => setEditingCause({ ...editingCause, credits: parseInt(e.target.value) || 0 })}
               required
-              value={editingCause.credits}
-              onChange={(e) => setEditingCause({...editingCause, credits: parseInt(e.target.value, 10)})}
+              isDisabled={loading}
             />
-            <Flex justifyContent="flex-end" gap="0.5rem">
-              <Button
-                onClick={() => {
-                  setIsEditing(false);
-                  setEditingCause(null);
-                }}
-                backgroundColor="transparent"
-                color="black"
+            
+            <Flex direction="row" gap="1rem" alignItems="center">
+              <label className="block text-sm font-medium text-gray-700">Durum</label>
+              <select
+                value={editingCause.status}
+                onChange={(e) => setEditingCause({ ...editingCause, status: e.target.value as 'active' | 'inactive' })}
+                className="rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                disabled={loading}
               >
-                İptal
-              </Button>
-              <Button type="submit" backgroundColor="green" color="white" isLoading={loading}>
-                Güncelle
-              </Button>
+                <option value="active">Aktif</option>
+                <option value="inactive">Pasif</option>
+              </select>
             </Flex>
+          </Flex>
+          
+          <Flex justifyContent="flex-end" gap="1rem">
+            <Button
+              onClick={() => {
+                setIsEditing(false);
+                setEditingCause(null);
+                setLogoPreview(null);
+                setUploadedFilePath(null);
+              }}
+              backgroundColor="white"
+              color="black"
+              borderColor="gray"
+              isDisabled={loading}
+            >
+              İptal
+            </Button>
+            <Button
+              type="submit"
+              backgroundColor="green"
+              color="white"
+              isLoading={loading}
+            >
+              Kaydet
+            </Button>
           </Flex>
         </View>
       )}
@@ -303,44 +439,88 @@ export default function CausesPage() {
             <TextField
               label="Amaç Adı"
               name="name"
-              required
+              placeholder="Amaç adını girin"
               value={newCause.name}
-              onChange={(e) => setNewCause({...newCause, name: e.target.value})}
+              onChange={(e) => setNewCause({ ...newCause, name: e.target.value })}
+              required
+              isDisabled={loading}
             />
+            
             <TextAreaField
               label="Açıklama"
               name="description"
-              required
+              placeholder="Amaç açıklamasını girin"
               value={newCause.description}
-              onChange={(e) => setNewCause({...newCause, description: e.target.value})}
-            />
-            <TextField
-              label="Logo URL"
-              name="logoUrl"
+              onChange={(e) => setNewCause({ ...newCause, description: e.target.value })}
               required
-              value={newCause.logoUrl}
-              onChange={(e) => setNewCause({...newCause, logoUrl: e.target.value})}
+              isDisabled={loading}
             />
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-600 hover:file:bg-green-100"
+                disabled={loading}
+              />
+              {logoPreview && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500 mb-1">Mevcut Logo:</p>
+                  <div className="w-24 h-24 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain" />
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <TextField
-              label="Gerekli Puan"
+              label="Puan Değeri"
               name="credits"
               type="number"
+              value={newCause.credits.toString()}
+              onChange={(e) => setNewCause({ ...newCause, credits: parseInt(e.target.value) || 0 })}
               required
-              value={newCause.credits}
-              onChange={(e) => setNewCause({...newCause, credits: parseInt(e.target.value, 10)})}
+              isDisabled={loading}
             />
-            <Flex justifyContent="flex-end" gap="0.5rem">
-              <Button
-                onClick={() => setIsCreating(false)}
-                backgroundColor="transparent"
-                color="black"
+            
+            <Flex direction="row" gap="1rem" alignItems="center">
+              <label className="block text-sm font-medium text-gray-700">Durum</label>
+              <select
+                value={newCause.status}
+                onChange={(e) => setNewCause({ ...newCause, status: e.target.value as 'active' | 'inactive' })}
+                className="rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                disabled={loading}
               >
-                İptal
-              </Button>
-              <Button type="submit" backgroundColor="green" color="white" isLoading={loading}>
-                Kaydet
-              </Button>
+                <option value="active">Aktif</option>
+                <option value="inactive">Pasif</option>
+              </select>
             </Flex>
+          </Flex>
+          
+          <Flex justifyContent="flex-end" gap="1rem">
+            <Button
+              onClick={() => {
+                setIsCreating(false);
+                setLogoPreview(null);
+                setUploadedFilePath(null);
+              }}
+              backgroundColor="white"
+              color="black"
+              borderColor="gray"
+              isDisabled={loading}
+            >
+              İptal
+            </Button>
+            <Button
+              type="submit"
+              backgroundColor="green"
+              color="white"
+              isLoading={loading}
+            >
+              Oluştur
+            </Button>
           </Flex>
         </View>
       )}
@@ -394,20 +574,18 @@ export default function CausesPage() {
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {cause.logoUrl ? (
                             <div className="relative h-10 w-10">
-                              <Image 
-                                src={cause.logoUrl} 
+                              <img 
+                                src={signedImageUrls[cause.logoUrl] || ''}
                                 alt={cause.name} 
-                                width={40}
-                                height={40}
-                                className="object-contain"
-                                onError={() => {
+                                className="h-10 w-10 rounded-md object-cover"
+                                onError={(e) => {
                                   console.error('Image failed to load');
+                                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cause.name)}&background=random`;
                                 }}
-                                unoptimized={cause.logoUrl.includes('placehold.co')}
                               />
                             </div>
                           ) : (
-                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                            <div className="h-10 w-10 rounded-md bg-gray-200 flex items-center justify-center text-gray-500">
                               {cause.name.charAt(0).toUpperCase()}
                             </div>
                           )}

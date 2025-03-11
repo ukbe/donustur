@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import outputs from './amplify_outputs.json';
+
+const bucket = outputs.storage.buckets.find((bucket) => bucket.name === 'donustur-templates')
 
 const nextConfig: NextConfig = {
   transpilePackages: [
@@ -10,34 +13,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'w7.pngwing.com',
+        hostname: `${bucket!.bucket_name}.s3.${bucket!.aws_region}.amazonaws.com`,
         pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.githubusercontent.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.pngwing.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.cloudfront.net',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.amazonaws.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        pathname: '/**',
-      },
+      }
     ],
   },
   webpack: (config) => {

@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation';
 import { getUserStats, listCauses, type Cause } from '@/lib/api';
 import { useNotification } from '@/components/ui/NotificationContext';
 import Image from 'next/image';
+import { getUrl } from 'aws-amplify/storage';
 
 export default function MarketplacePage() {
   const [causes, setCauses] = useState<Cause[]>([]);
   const [loading, setLoading] = useState(true);
   const [userCredits, setUserCredits] = useState(0);
+  const [signedImageUrls, setSignedImageUrls] = useState<Record<string, string>>({});
   const { user } = useAuthenticator();
   const router = useRouter();
   const { showNotification } = useNotification();
@@ -22,6 +24,26 @@ export default function MarketplacePage() {
         // Load causes
         const causesList = await listCauses(true); // Only active causes
         setCauses(causesList);
+
+        // Get signed URLs for all logos
+        const urls: Record<string, string> = {};
+        for (const cause of causesList) {
+          if (cause.logoUrl) {
+            try {
+              const { url } = await getUrl({
+                path: cause.logoUrl,
+                options: {
+                  bucket: 'donustur-templates',
+                  expiresIn: 3600,
+                }
+              });
+              urls[cause.logoUrl] = url.toString();
+            } catch (e) {
+              console.error('Error getting signed URL for', cause.logoUrl, e);
+            }
+          }
+        }
+        setSignedImageUrls(urls);
 
         // Load user data to get credits
         if (user?.userId) {
@@ -81,10 +103,10 @@ export default function MarketplacePage() {
             >
               <div className="p-4">
                 <div className="flex items-center mb-4">
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                    {cause.logoUrl ? (
+                  <div className="w-16 h-16 rounded-md overflow-hidden  flex items-center justify-center">
+                    {cause.logoUrl && signedImageUrls[cause.logoUrl] ? (
                       <Image
-                        src={cause.logoUrl}
+                        src={signedImageUrls[cause.logoUrl]}
                         alt={cause.name}
                         width={64}
                         height={64}

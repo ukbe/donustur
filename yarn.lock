@@ -1051,6 +1051,42 @@
     react-hook-form "^7.53.2"
     xstate "^4.33.6"
 
+"@aws-amplify/ui-react-core@3.3.3":
+  version "3.3.3"
+  resolved "https://registry.yarnpkg.com/@aws-amplify/ui-react-core/-/ui-react-core-3.3.3.tgz#9b5c5c232c3946155b20ac8f5cd82ad3a6790469"
+  integrity sha512-G+lmdCVGpVNve8Y61IwhTLWuGZG6g57GGKIDlN2O+FgXs4IbN0tvWwTeu3uOPBZzi6J8vsGzgLQl1qTg3Thsdw==
+  dependencies:
+    "@aws-amplify/ui" "6.9.0"
+    "@xstate/react" "^3.2.2"
+    lodash "4.17.21"
+    react-hook-form "^7.53.2"
+    xstate "^4.33.6"
+
+"@aws-amplify/ui-react-storage@^3.8.2":
+  version "3.8.2"
+  resolved "https://registry.yarnpkg.com/@aws-amplify/ui-react-storage/-/ui-react-storage-3.8.2.tgz#0008257915472bcf9c2e59b65fede00a7ff7406c"
+  integrity sha512-+88Ic8Gj2sCUIHV3a/6N3BNENc9AvfCLftc4uOo/nmwoKF5nHfDkCf5qSAa2WJeIVA/hKBBMGRcq1N9APmu5gQ==
+  dependencies:
+    "@aws-amplify/ui" "6.9.0"
+    "@aws-amplify/ui-react" "6.9.3"
+    "@aws-amplify/ui-react-core" "3.3.3"
+    tslib "^2.5.2"
+
+"@aws-amplify/ui-react@6.9.3":
+  version "6.9.3"
+  resolved "https://registry.yarnpkg.com/@aws-amplify/ui-react/-/ui-react-6.9.3.tgz#b04e03b4d55ea24833392777f185c983990be774"
+  integrity sha512-LqpKsV0KUyBPF+De/m8IMdEvrtlu9CTnbt0o7Vs6IZtr/0w4RElHLpNTL8y77JxgvNdyK0l7Uj0kM0UPoQxAZQ==
+  dependencies:
+    "@aws-amplify/ui" "6.9.0"
+    "@aws-amplify/ui-react-core" "3.3.3"
+    "@radix-ui/react-direction" "^1.1.0"
+    "@radix-ui/react-dropdown-menu" "^2.1.4"
+    "@radix-ui/react-slider" "^1.2.2"
+    "@xstate/react" "^3.2.2"
+    lodash "4.17.21"
+    qrcode "1.5.0"
+    tslib "^2.5.2"
+
 "@aws-amplify/ui-react@^6.9.1":
   version "6.9.1"
   resolved "https://registry.npmjs.org/@aws-amplify/ui-react/-/ui-react-6.9.1.tgz"
@@ -1070,6 +1106,15 @@
   version "6.8.1"
   resolved "https://registry.npmjs.org/@aws-amplify/ui/-/ui-6.8.1.tgz"
   integrity sha512-bQNq6KD4mLyJCCUUrxFkvwW71BeZN27UGwsmxwDC0XkeGaW5aNjq/5lZM8VZV3of4MxO5yrEfwAHJvSX8xD7Jg==
+  dependencies:
+    csstype "^3.1.1"
+    lodash "4.17.21"
+    tslib "^2.5.2"
+
+"@aws-amplify/ui@6.9.0":
+  version "6.9.0"
+  resolved "https://registry.yarnpkg.com/@aws-amplify/ui/-/ui-6.9.0.tgz#b7d7c2d987669c42d0ee2a72c14dc6d2ab4d2c22"
+  integrity sha512-dLSKX9F56E3plt0gOfRPxKgsROZPScqd5r7+VKEpbpUMv0iXc+4FWi7OzVP48sTNL+3Sv1/Yr5LXftSiRjXjNw==
   dependencies:
     csstype "^3.1.1"
     lodash "4.17.21"
@@ -6261,14 +6306,9 @@
   resolved "https://registry.npmjs.org/@tsconfig/node16/-/node16-1.0.4.tgz"
   integrity sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==
 
-"@types/aws-lambda@^8.10.134":
+"@types/aws-lambda@^8.10.134", "@types/aws-lambda@^8.10.147":
   version "8.10.147"
   resolved "https://registry.npmjs.org/@types/aws-lambda/-/aws-lambda-8.10.147.tgz"
-  integrity sha512-nD0Z9fNIZcxYX5Mai2CTmFD7wX7UldCkW2ezCF8D1T5hdiLsnTWDGRpfRYntU6VjTdLQjOvyszru7I1c1oCQew==
-
-"@types/aws-lambda@^8.10.147":
-  version "8.10.147"
-  resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.147.tgz#dc5c89aa32f47a9b35e52c32630545c83afa6f2f"
   integrity sha512-nD0Z9fNIZcxYX5Mai2CTmFD7wX7UldCkW2ezCF8D1T5hdiLsnTWDGRpfRYntU6VjTdLQjOvyszru7I1c1oCQew==
 
 "@types/estree@^1.0.6":

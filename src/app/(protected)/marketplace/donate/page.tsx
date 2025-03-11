@@ -7,12 +7,14 @@ import { getCause, getUserStats, redeemForCause, type Cause } from '@/lib/api';
 import { useNotification } from '@/components/ui/NotificationContext';
 import Image from 'next/image';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { getUrl } from 'aws-amplify/storage';
 
 export default function DonatePage() {
   const [cause, setCause] = useState<Cause | null>(null);
   const [userCredits, setUserCredits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const causeId = searchParams.get('causeId');
   const { user } = useAuthenticator();
@@ -35,6 +37,22 @@ export default function DonatePage() {
           return;
         }
         setCause(causeData);
+
+        // Get signed URL for logo if available
+        if (causeData.logoUrl) {
+          try {
+            const { url } = await getUrl({
+              path: causeData.logoUrl,
+              options: {
+                bucket: 'donustur-templates',
+                expiresIn: 3600,
+              }
+            });
+            setLogoUrl(url.toString());
+          } catch (e) {
+            console.error('Error getting signed URL for logo:', e);
+          }
+        }
 
         // Load user data to get credits
         const userStats = await getUserStats(user.userId);
@@ -118,10 +136,10 @@ export default function DonatePage() {
           <h1 className="text-xl font-semibold leading-6 text-gray-900 mb-4">Bağış Onayı</h1>
           
           <div className="flex items-center mb-6 border-b border-gray-100 pb-6">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-              {cause.logoUrl ? (
+            <div className="w-16 h-16 rounded-md overflow-hidden  flex items-center justify-center">
+              {logoUrl ? (
                 <Image
-                  src={cause.logoUrl}
+                  src={logoUrl}
                   alt={cause.name}
                   width={64}
                   height={64}
