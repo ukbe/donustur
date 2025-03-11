@@ -14,12 +14,44 @@ Amplify.configure(resourceConfig, libraryOptions);
 const client = generateClient<Schema>();
 
 export const handler: PostConfirmationTriggerHandler = async (event) => {
-  await client.models.User.create({
-      email: event.request.userAttributes.email,
+  console.log("Post confirmation event:", JSON.stringify(event, null, 2));
+  
+  try {
+    // Extract user attributes
+    const { email, sub: userId, name } = event.request.userAttributes;
+    
+    // Check if user already exists
+    try {
+      const existingUser = await client.models.User.get({ id: userId });
+      if (existingUser.data) {
+        console.log("User already exists:", userId);
+        return event;
+      }
+    } catch (error) {
+      console.log("Error checking for existing user:", error);
+      // Continue to create user if not found
+    }
+    
+    // Create user record
+    const now = new Date().toISOString();
+    const userData = {
+      id: userId,
+      email: email,
       totalCredits: 0,
-      id: event.request.userAttributes.userId,
-      name: event.request.userAttributes.name
-  });
+      name: name || email.split('@')[0], // Use name if available, otherwise use email username
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    console.log("Creating user with data:", userData);
+    
+    const result = await client.models.User.create(userData);
+    console.log("User created successfully:", result.data);
+  } catch (error) {
+    console.error("Error creating user in post-confirmation:", error);
+    // Don't throw error to prevent sign-up failure
+    // Just log the error and continue
+  }
 
   return event;
 };

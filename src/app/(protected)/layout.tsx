@@ -3,8 +3,9 @@
 import {useAuthenticator} from '@aws-amplify/ui-react';
 import {useRouter} from 'next/navigation';
 import {useEffect} from 'react';
+import Header from '@/components/common/Header';
 
-export default function DashboardLayout({children}: {children: React.ReactNode}) {
+export default function ProtectedLayout({children}: {children: React.ReactNode}) {
   const {authStatus} = useAuthenticator();
   const router = useRouter();
 
@@ -18,5 +19,10 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen bg-gray-50/50">
+      <Header />
+      <main>{children}</main>
+    </div>
+  );
 }

@@ -31,12 +31,35 @@ export async function getUserScans(userId: string): Promise<Scan[]> {
 }
 
 export async function getUserStats(userId: string) {
-  const scans = await getUserScans(userId);
-  return {
-    totalCredits: scans.reduce((sum, scan) => sum + scan.credits, 0),
-    totalScans: scans.length,
-    usedCredits: 0, // Will implement with marketplace
-  };
+  try {
+    // Get all scans
+    const scans = await getUserScans(userId);
+    
+    // Get all redemptions for this user
+    const redemptionsResponse = await client.models.Redemption.list({
+      filter: {
+        userId: { eq: userId }
+      }
+    });
+    
+    const redemptions = redemptionsResponse.data;
+    
+    // Calculate used credits from redemptions
+    const usedCredits = redemptions.reduce((sum, redemption) => sum + redemption.credits, 0);
+    
+    return {
+      totalCredits: scans.reduce((sum, scan) => sum + scan.credits, 0),
+      totalScans: scans.length,
+      usedCredits: usedCredits
+    };
+  } catch (error) {
+    console.error('Error getting user stats:', error);
+    return {
+      totalCredits: 0,
+      totalScans: 0,
+      usedCredits: 0
+    };
+  }
 }
 
 export type Bin = {
@@ -160,7 +183,7 @@ export async function updateUserCredits(userId: string, creditsToAdd: number): P
     
     if (!user) {
       console.error('User not found:', userId);
-      return;
+      throw new Error(`User not found: "${userId}"`);
     }
     
     // Update total credits
@@ -171,6 +194,7 @@ export async function updateUserCredits(userId: string, creditsToAdd: number): P
     });
   } catch (error) {
     console.error('Error updating user credits:', error);
+    throw error;
   }
 }
 
@@ -577,6 +601,32 @@ export async function redeemForCause(userId: string, causeId: string, credits: n
     
   } catch (error) {
     console.error('Error redeeming for cause:', error);
+    throw error;
+  }
+}
+
+// Add a function to create a user record
+export async function createUser(userData: {
+  id: string;
+  email: string;
+  totalCredits: number;
+  name?: string;
+}): Promise<unknown> {
+  try {
+    console.log('Creating user with data:', userData);
+    
+    // Add timestamps
+    const now = new Date().toISOString();
+    const userWithTimestamps = {
+      ...userData,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    const response = await client.models.User.create(userWithTimestamps);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating user:', error);
     throw error;
   }
 } 

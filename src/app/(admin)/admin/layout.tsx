@@ -3,7 +3,7 @@
 import {useAuthenticator} from '@aws-amplify/ui-react';
 import {useRouter, usePathname} from 'next/navigation';
 import {useEffect} from 'react';
-import {HomeIcon, QrCodeIcon, UserGroupIcon, ChartBarIcon, HeartIcon} from '@heroicons/react/24/outline';
+import {HomeIcon, QrCodeIcon, UserGroupIcon, HeartIcon, ArrowLeftIcon} from '@heroicons/react/24/outline';
 import Logo from '@/components/common/Logo';
 import {fetchAuthSession} from 'aws-amplify/auth';
 import {NotificationProvider} from '@/components/ui/NotificationContext';
@@ -13,7 +13,6 @@ const navigation = [
   {name: 'Geri Dönüşüm Kutuları', href: '/admin/bins', icon: QrCodeIcon},
   {name: 'Kullanıcılar', href: '/admin/users', icon: UserGroupIcon},
   {name: 'Amaçlar', href: '/admin/causes', icon: HeartIcon},
-  {name: 'Raporlar', href: '/admin/reports', icon: ChartBarIcon},
 ];
 
 export default function AdminLayout({children}: {children: React.ReactNode}) {
@@ -40,6 +39,19 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
   return (
     <NotificationProvider>
       <div>
+        {/* Mobile header */}
+        <div className="lg:hidden sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6">
+          <div className="flex flex-1 items-center justify-between">
+            <Logo className="h-8" width={120} height={40} />
+            <div className="flex items-center gap-x-4">
+              <a href="/dashboard" className="rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors duration-200">
+                Kullanıcı Paneli
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop sidebar */}
         <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
           <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center">
@@ -63,12 +75,18 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
                         </a>
                       </li>
                     ))}
+                    <li className="pt-10">
+                      <a href="/dashboard" className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-green-600">
+                        <ArrowLeftIcon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                        Kullanıcı Paneline Dön
+                      </a>
+                    </li>
                   </ul>
                 </li>
                 <li className="mt-auto">
                   <button
                     onClick={handleSignOut}
-                    className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-green-600"
+                    className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-green-600 w-full"
                   >
                     Çıkış Yap
                   </button>
@@ -79,6 +97,9 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
         </div>
 
         <main className="lg:pl-72">
+          {/* Empty toolbar for spacing */}
+          <div className="h-4 bg-gray-50"></div>
+
           <div className="px-4 sm:px-6 lg:px-8 py-6">{children}</div>
         </main>
       </div>
