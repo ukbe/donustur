@@ -117,18 +117,18 @@ export async function updateUserAttributes(
     const userAttributes: AWS.CognitoIdentityServiceProvider.AttributeListType = [];
     
     if (params.userAttributes.name !== undefined) {
-      userAttributes.push({ Name: 'name', Value: params.userAttributes.name });
+      userAttributes.push({ Name: 'name', Value: String(params.userAttributes.name) });
     }
     
     if (params.userAttributes.email !== undefined) {
-      userAttributes.push({ Name: 'email', Value: params.userAttributes.email });
+      userAttributes.push({ Name: 'email', Value: String(params.userAttributes.email) });
       userAttributes.push({ Name: 'email_verified', Value: 'true' });
     }
     
     if (params.userAttributes.credits !== undefined) {
       userAttributes.push({ 
         Name: 'custom:credits', 
-        Value: params.userAttributes.credits.toString() 
+        Value: params.userAttributes.credits !== null ? String(params.userAttributes.credits) : '0'
       });
     }
     
@@ -138,7 +138,7 @@ export async function updateUserAttributes(
         const attributeName = key.startsWith('custom:') ? key : `custom:${key}`;
         userAttributes.push({ 
           Name: attributeName, 
-          Value: value.toString() 
+          Value: value !== null ? String(value) : '' 
         });
       }
     });

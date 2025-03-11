@@ -14,6 +14,7 @@ export default function DonatePage() {
   const [userCredits, setUserCredits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [succeeded, setSucceeded] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const causeId = searchParams.get('causeId');
@@ -82,15 +83,20 @@ export default function DonatePage() {
     setProcessing(true);
     try {
       await redeemForCause(user.userId, cause.id, cause.credits);
+      
+      // Set success state
+      setSucceeded(true);
+      setProcessing(false);
+      
       showNotification('success', 'Bağış Başarılı', `${cause.name} kurumuna ${cause.credits} puan bağışladınız.`);
       
       // Update local state
       setUserCredits(prevCredits => prevCredits - cause.credits);
       
-      // Redirect after short delay
+      // Redirect to dashboard after short delay
       setTimeout(() => {
-        router.push('/marketplace');
-      }, 2000);
+        router.push('/dashboard');
+      }, 3000);
     } catch (error) {
       console.error('Error processing donation:', error);
       let errorMessage = 'Bağış işlemi sırasında bir hata oluştu.';
@@ -102,7 +108,6 @@ export default function DonatePage() {
       }
       
       showNotification('error', 'Bağış Hatası', errorMessage);
-    } finally {
       setProcessing(false);
     }
   }
@@ -120,6 +125,38 @@ export default function DonatePage() {
   }
 
   const canDonate = userCredits >= cause.credits;
+
+  // Display success message if donation was successful
+  if (succeeded) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+        <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100 max-w-2xl mx-auto p-8 text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-full bg-green-100 p-3">
+              <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Bağış Başarılı!</h1>
+          <p className="text-gray-600 mb-6">
+            {cause?.name} kurumuna {cause?.credits} puan bağışı yaptınız. Desteğiniz için teşekkür ederiz.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            Kontrol panelinize yönlendiriliyorsunuz...
+          </p>
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              Panele Git
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">

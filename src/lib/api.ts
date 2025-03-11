@@ -396,6 +396,13 @@ export async function updateUser(
   try {
     console.log('API: Updating user attributes for user:', userId, data);
     
+    // Ensure credits is a valid number
+    if (data.credits !== undefined) {
+      if (data.credits === null || isNaN(data.credits)) {
+        data.credits = 0;
+      }
+    }
+    
     const response = await client.graphql({
       query: updateUserAttributesMutation,
       variables: { 
@@ -406,7 +413,13 @@ export async function updateUser(
     });
     
     // Parse the AWSJSON response
-    const result = JSON.parse((response as { data?: { updateUserAttributes?: string } }).data?.updateUserAttributes || '{}') as UserManagementResponse;
+    const responseData = (response as { data?: { updateUserAttributes?: string } }).data?.updateUserAttributes;
+    
+    if (!responseData) {
+      throw new Error('Empty response from server');
+    }
+    
+    const result = JSON.parse(responseData) as UserManagementResponse;
     
     if (!result?.success) {
       throw new Error(result?.message || 'Failed to update user');
@@ -600,18 +613,23 @@ export async function deleteCause(causeId: string): Promise<void> {
 // User redemption - Support a cause
 export async function redeemForCause(userId: string, causeId: string, credits: number): Promise<void> {
   try {
-    // 1. Check user has enough credits
-    // Cast to unknown first to avoid TypeScript errors with model return types
-    const userResponse = await client.models.User.get({ id: userId }) as unknown as { data: User };
-    const user = userResponse.data;
+    console.log('API: Redeeming credits for cause:', {userId, causeId, credits});
+    
+    // 1. Get user data to check credits
+    const user = await getUserById(userId);
     
     if (!user) {
       throw new Error('User not found');
     }
     
-    if (user.credits < credits) {
+    // Ensure user credits is a number
+    const userCredits = typeof user.credits === 'number' ? user.credits : 0;
+    
+    if (userCredits < credits) {
       throw new Error('Insufficient credits');
     }
+    
+    console.log('User has sufficient credits:', {userCredits, redemptionCredits: credits});
     
     // 2. Create a redemption record
     await client.models.Redemption.create({
@@ -621,10 +639,17 @@ export async function redeemForCause(userId: string, causeId: string, credits: n
       timestamp: new Date().toISOString()
     }) as unknown;
     
+    console.log('Redemption record created successfully');
+    
     // 3. Update user's credits
+    const newCredits = userCredits - credits;
+    console.log('Updating user credits from', userCredits, 'to', newCredits);
+    
     await updateUser(userId, {
-      credits: user.credits - credits
+      credits: newCredits
     });
+    
+    console.log('User credits updated successfully');
     
   } catch (error) {
     console.error('Error redeeming for cause:', error);
