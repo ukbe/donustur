@@ -25,7 +25,7 @@ export default function CausesPage() {
   
   // Use useCallback to memoize the loadCauses function
   const loadCauses = useCallback(async () => {
-    // Prevent duplicate requests
+    // Prevent multiple requests if already loading
     if (loading) return;
     
     setLoading(true);
@@ -43,7 +43,7 @@ export default function CausesPage() {
     } finally {
       setLoading(false);
     }
-  }, [loading, showNotification]);
+  }, [showNotification]);
   
   useEffect(() => {
     loadCauses();
