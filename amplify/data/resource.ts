@@ -37,8 +37,8 @@ const schema = a.schema({
       timestamp: a.datetime().required(),
     })
     .authorization((allow) => [
-      allow.owner().to(['read']),
-      allow.group('admin').to(['read']),
+      allow.owner().to(['read', 'create']),
+      allow.group('admin').to(['read', 'create', 'update', 'delete']),
     ]),
 
   User: a
@@ -51,7 +51,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.owner().to(['read', 'update']),
-      allow.group('admin').to(['read', 'update']),
+      allow.group('admin').to(['read', 'update', 'create', 'delete']),
     ]),
 
   Redemption: a

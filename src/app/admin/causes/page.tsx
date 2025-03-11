@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TextField, TextAreaField, Button, Flex, View } from '@aws-amplify/ui-react';
 import { createCause, listCauses, updateCause, deleteCause, type Cause } from '@/lib/api';
 import { useNotification } from '@/components/ui/NotificationContext';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 
 export default function CausesPage() {
   const [causes, setCauses] = useState<Cause[]>([]);
@@ -22,11 +23,8 @@ export default function CausesPage() {
   });
   const { showNotification } = useNotification();
   
-  useEffect(() => {
-    loadCauses();
-  }, []);
-  
-  async function loadCauses() {
+  // Use useCallback to memoize the loadCauses function
+  const loadCauses = useCallback(async () => {
     // Prevent duplicate requests
     if (loading) return;
     
@@ -45,7 +43,11 @@ export default function CausesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [loading, showNotification]);
+  
+  useEffect(() => {
+    loadCauses();
+  }, [loadCauses]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -391,16 +393,23 @@ export default function CausesPage() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {cause.logoUrl ? (
-                            <img 
-                              src={cause.logoUrl} 
-                              alt={cause.name} 
-                              className="h-10 w-10 object-contain"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=No+Image';
-                              }}
-                            />
+                            <div className="relative h-10 w-10">
+                              <Image 
+                                src={cause.logoUrl} 
+                                alt={cause.name} 
+                                width={40}
+                                height={40}
+                                className="object-contain"
+                                onError={() => {
+                                  console.error('Image failed to load');
+                                }}
+                                unoptimized={cause.logoUrl.includes('placehold.co')}
+                              />
+                            </div>
                           ) : (
-                            <span>Resim yok</span>
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                              {cause.name.charAt(0).toUpperCase()}
+                            </div>
                           )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">

@@ -177,14 +177,39 @@ export async function createScan(scan: ScanInput): Promise<Scan> {
 
 export async function updateUserCredits(userId: string, creditsToAdd: number): Promise<void> {
   try {
+    // Validate userId
+    if (!userId) {
+      throw new Error('User ID is required for updating credits');
+    }
+    
+    console.log('Updating credits for user ID:', userId);
+    
     // Get current user
     const userResponse = await client.models.User.get({ id: userId });
-    const user = userResponse.data;
+    let user = userResponse.data;
     
     if (!user) {
-      console.error('User not found:', userId);
-      throw new Error(`User not found: "${userId}"`);
+      console.log('User not found, creating new user record:', userId);
+      
+      // Create a new user record with minimal information
+      const now = new Date().toISOString();
+      const newUserData = {
+        id: userId,
+        email: `user_${userId}@example.com`, // Placeholder email
+        totalCredits: 0,
+        createdAt: now,
+        updatedAt: now
+      };
+      
+      const createResponse = await client.models.User.create(newUserData);
+      user = createResponse.data;
+      
+      if (!user) {
+        throw new Error(`Failed to create user: "${userId}"`);
+      }
     }
+    
+    console.log('Updating user credits:', userId, 'Current credits:', user.totalCredits, 'Adding:', creditsToAdd);
     
     // Update total credits
     await client.models.User.update({
@@ -192,6 +217,8 @@ export async function updateUserCredits(userId: string, creditsToAdd: number): P
       totalCredits: (user.totalCredits || 0) + creditsToAdd,
       updatedAt: new Date().toISOString(),
     });
+    
+    console.log('Credits updated successfully for user:', userId);
   } catch (error) {
     console.error('Error updating user credits:', error);
     throw error;
@@ -613,6 +640,15 @@ export async function createUser(userData: {
   name?: string;
 }): Promise<unknown> {
   try {
+    // Validate required fields
+    if (!userData.id) {
+      throw new Error('User ID is required');
+    }
+    
+    if (!userData.email) {
+      throw new Error('Email is required');
+    }
+    
     console.log('Creating user with data:', userData);
     
     // Add timestamps
@@ -623,10 +659,68 @@ export async function createUser(userData: {
       updatedAt: now,
     };
     
+    console.log('Sending create request with data:', JSON.stringify(userWithTimestamps));
+    
     const response = await client.models.User.create(userWithTimestamps);
+    console.log('User created successfully:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error creating user:', error);
+    
+    // Try to extract more detailed error information
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
+      // Try to parse GraphQL errors from the message
+      try {
+        const errorData = JSON.parse(error.message);
+        console.error('Parsed error data:', errorData);
+      } catch {
+        // If parsing fails, it's not a JSON error message
+        console.error('Error is not in JSON format');
+      }
+    }
+    
     throw error;
+  }
+}
+
+// Get a single user by ID (for regular users)
+export async function getUserById(userId: string): Promise<User | null> {
+  try {
+    console.log('API: Getting user with ID (direct):', userId);
+    
+    if (!userId) {
+      console.error('getUserById called with empty userId');
+      return null;
+    }
+    
+    // Use the User model directly
+    const response = await client.models.User.get({ id: userId });
+    
+    if (!response.data) {
+      console.log('User not found:', userId);
+      return null;
+    }
+    
+    console.log('User found:', response.data);
+    
+    // Convert the model response to User type
+    const userData = response.data;
+    return {
+      id: userData.id,
+      username: userData.email.split('@')[0], // Use email as username if not available
+      email: userData.email,
+      name: userData.name || '',
+      credits: userData.totalCredits || 0,
+      userGroups: [], // Not available in direct model access
+      enabled: true, // Assume enabled
+      createdAt: userData.createdAt || new Date().toISOString(),
+      updatedAt: userData.updatedAt || new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error getting user:', error);
+    return null;
   }
 } 

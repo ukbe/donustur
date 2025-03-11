@@ -40,7 +40,8 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
       totalCredits: 0,
       name: name || email.split('@')[0], // Use name if available, otherwise use email username
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      owner: `${userId}:${email}`
     };
     
     console.log("Creating user with data:", userData);
