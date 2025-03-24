@@ -332,6 +332,21 @@ export default function BinsPage() {
         contentHeight // height
       );
       
+      // Add a clickable area over the manual link box
+      // The manual link box appears approximately 2/3 down the page
+      // Estimate its position based on the overall content height
+      const linkBoxYPosition = margin + (contentHeight * 0.82); // Start a bit higher to include the title
+      const linkBoxHeight = contentHeight * 0.15; // Slightly taller to cover the entire section
+      
+      // Add a clickable area over the entire manual link box including the title
+      pdf.link(
+        margin + (contentWidth * 0.1), // X position (add some margin from the left)
+        linkBoxYPosition, // Y position 
+        contentWidth * 0.8, // Width (80% of content width)
+        linkBoxHeight, // Height
+        { url: cleanQrUrl } // Link to the same URL as the QR code
+      );
+      
       // 8. Save and cleanup
       const safeName = bin.name ? bin.name.replace(/\s+/g, '-') : 'unnamed-bin';
       pdf.save(`donustur-qr-${safeName}.pdf`);
