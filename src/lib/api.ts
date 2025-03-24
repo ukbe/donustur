@@ -3,7 +3,6 @@ import type {Schema} from '../../amplify/data/resource';
 import { 
   listUsersQuery, 
   getUserQuery,
-  updateUserAttributesMutation,
   addUserToGroupMutation,
   removeUserFromGroupMutation,
   enableUserMutation,
@@ -47,17 +46,25 @@ export async function getUserStats(userId: string) {
     // Calculate used credits from redemptions
     const usedCredits = redemptions.reduce((sum, redemption) => sum + redemption.credits, 0);
     
+    // Calculate total credits earned from scans
+    const totalCredits = scans.reduce((sum, scan) => sum + scan.credits, 0);
+    
+    // Calculate available credits (total - used)
+    const availableCredits = totalCredits - usedCredits;
+    
     return {
-      totalCredits: scans.reduce((sum, scan) => sum + scan.credits, 0),
+      totalCredits,
       totalScans: scans.length,
-      usedCredits: usedCredits
+      usedCredits,
+      availableCredits
     };
   } catch (error) {
     console.error('Error getting user stats:', error);
     return {
       totalCredits: 0,
       totalScans: 0,
-      usedCredits: 0
+      usedCredits: 0,
+      availableCredits: 0
     };
   }
 }
@@ -350,7 +357,35 @@ export async function listUsers(): Promise<User[]> {
       throw new Error(responseJson.message || 'Failed to list users');
     }
     
-    return responseJson.users || [];
+    // Get users from Cognito (which have groups info but zero credits)
+    const cognitoUsers = responseJson.users || [];
+    
+    // Now get all users from DynamoDB to get accurate credit information
+    const dynamoUsersResponse = await client.models.User.list();
+    const dynamoUsers = dynamoUsersResponse.data || [];
+    
+    // Create a map of user IDs to totalCredits from DynamoDB
+    const creditsMap = new Map<string, number>();
+    dynamoUsers.forEach(user => {
+      creditsMap.set(user.id, user.totalCredits || 0);
+    });
+    
+    // Merge DynamoDB credit information with Cognito user data
+    const mergedUsers = cognitoUsers.map((user: { id?: string; Username?: string; credits?: number } & Record<string, unknown>) => {
+      // In the Cognito response, the ID may be in either 'Username' or 'id'
+      // User type in API has 'id' but the Cognito response has 'Username'
+      const userId = user.id || user.Username || '';
+      
+      return {
+        ...user,
+        // Make sure we have an id field for consistency
+        id: userId,
+        // Use DynamoDB totalCredits if available, otherwise fallback to Cognito credits (likely 0)
+        credits: userId && creditsMap.has(userId) ? creditsMap.get(userId) as number : (user.credits as number || 0)
+      };
+    });
+    
+    return mergedUsers;
   } catch (error) {
     console.error('Error listing users:', error);
     throw error;
@@ -403,29 +438,32 @@ export async function updateUser(
       }
     }
     
-    const response = await client.graphql({
-      query: updateUserAttributesMutation,
-      variables: { 
-        id: userId, 
-        attributes: JSON.stringify(data)
-      },
-      authMode: 'userPool'
-    });
+    // Transform data to match DynamoDB schema (convert credits to totalCredits)
+    const dynamoData: {
+      name?: string;
+      totalCredits?: number;
+      email?: string;
+    } = {
+      name: data.name,
+      email: data.email
+    };
     
-    // Parse the AWSJSON response
-    const responseData = (response as { data?: { updateUserAttributes?: string } }).data?.updateUserAttributes;
-    
-    if (!responseData) {
-      throw new Error('Empty response from server');
+    // Only add totalCredits if credits was provided
+    if (data.credits !== undefined) {
+      dynamoData.totalCredits = data.credits;
     }
     
-    const result = JSON.parse(responseData) as UserManagementResponse;
+    // Use the direct DynamoDB update function
+    const updatedData = await updateUserDynamoDB(userId, dynamoData);
     
-    if (!result?.success) {
-      throw new Error(result?.message || 'Failed to update user');
+    if (!updatedData) {
+      throw new Error('Failed to update user');
     }
     
-    return result.user || null;
+    // Get the updated user to ensure we return the correct format
+    const user = await getUserById(userId);
+    
+    return user;
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
@@ -645,8 +683,9 @@ export async function redeemForCause(userId: string, causeId: string, credits: n
     const newCredits = userCredits - credits;
     console.log('Updating user credits from', userCredits, 'to', newCredits);
     
-    await updateUser(userId, {
-      credits: newCredits
+    // Use updateUserDynamoDB instead of updateUser to avoid Cognito attribute issues
+    await updateUserDynamoDB(userId, {
+      totalCredits: newCredits
     });
     
     console.log('User credits updated successfully');
@@ -747,6 +786,47 @@ export async function getUserById(userId: string): Promise<User | null> {
   } catch (error) {
     console.error('Error getting user:', error);
     return null;
+  }
+}
+
+// Update user directly in DynamoDB (bypass Cognito user attributes)
+export async function updateUserDynamoDB(
+  userId: string,
+  data: {
+    name?: string;
+    totalCredits?: number;
+    email?: string;
+  }
+): Promise<unknown> {
+  try {
+    console.log('API: Updating user in DynamoDB:', userId, data);
+    
+    // Ensure data is valid
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
+    if (Object.keys(data).length === 0) {
+      throw new Error('At least one attribute must be provided for update');
+    }
+    
+    // Add updated timestamp
+    const updateData = {
+      ...data,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Update the user record directly using the DynamoDB model
+    const response = await client.models.User.update({
+      id: userId,
+      ...updateData
+    });
+    
+    console.log('User updated successfully in DynamoDB:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user in DynamoDB:', error);
+    throw error;
   }
 }
 

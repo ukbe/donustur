@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { QrCodeIcon, ArrowTrendingUpIcon, GiftIcon } from '@heroicons/react/24/outline';
+import { QrCodeIcon, ArrowTrendingUpIcon, GiftIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { getUserScans, getUserStats, type Scan } from '@/lib/api';
 import { fetchAuthSession } from 'aws-amplify/auth';
@@ -13,6 +13,7 @@ export default function DashboardPage() {
     totalCredits: 0,
     totalScans: 0,
     usedCredits: 0,
+    availableCredits: 0
   });
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -48,6 +49,7 @@ export default function DashboardPage() {
     { name: 'Toplam Puan', value: stats.totalCredits.toString(), icon: ArrowTrendingUpIcon },
     { name: 'Toplam İşlem', value: stats.totalScans.toString(), icon: QrCodeIcon },
     { name: 'Kullanılan Puan', value: stats.usedCredits.toString(), icon: GiftIcon },
+    { name: 'Kullanılabilir Puan', value: stats.availableCredits.toString(), icon: CurrencyDollarIcon },
   ];
 
   return (
@@ -76,7 +78,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {statsDisplay.map((stat) => (
           <div key={stat.name} className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <div className="flex items-center">

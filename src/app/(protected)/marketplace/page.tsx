@@ -48,9 +48,8 @@ export default function MarketplacePage() {
         // Load user data to get credits
         if (user?.userId) {
           const userStats = await getUserStats(user.userId);
-          // Available credits is total credits minus used credits
-          const availableCredits = userStats.totalCredits - userStats.usedCredits;
-          setUserCredits(availableCredits);
+          // Use available credits directly from the API
+          setUserCredits(userStats.availableCredits);
         }
       } catch (error) {
         console.error('Error loading marketplace data:', error);

@@ -57,9 +57,8 @@ export default function DonatePage() {
 
         // Load user data to get credits
         const userStats = await getUserStats(user.userId);
-        // Available credits is total credits minus used credits
-        const availableCredits = userStats.totalCredits - userStats.usedCredits;
-        setUserCredits(availableCredits);
+        // Use available credits directly from the API
+        setUserCredits(userStats.availableCredits);
       } catch (error) {
         console.error('Error loading donation data:', error);
         showNotification('error', 'Yükleme Hatası', 'Veriler yüklenirken bir hata oluştu.');
