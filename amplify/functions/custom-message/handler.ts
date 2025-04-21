@@ -5,10 +5,43 @@ const s3Client = new S3Client({ region: process.env.REGION });
 
 export const handler: CustomMessageTriggerHandler = async (event) => {
   console.log('Custom message event:', JSON.stringify(event, null, 2));
+
+  let subject = "Dönüştür";
+  let templateKey: string;
+  const baseKey = `email-templates/auth/${event.triggerSource}.html`;
+
+
+  // Determine the correct template key and subject based on the trigger
+  switch (event.triggerSource) {
+    case "CustomMessage_SignUp":
+      templateKey = baseKey; // Use specific template if it exists
+      subject = "Eposta adresini doğrula";
+      break;
+    case "CustomMessage_ResendCode":
+      // Reuse the SignUp template for ResendCode
+      templateKey = 'email-templates/auth/CustomMessage_SignUp.html'; 
+      subject = "Eposta adresini doğrula"; // Use same subject
+      break;
+    case "CustomMessage_ForgotPassword":
+      templateKey = baseKey;
+      subject = "Şifreni sıfırla";
+      break;
+    // Add other specific cases if needed
+    // case "CustomMessage_AdminCreateUser":
+    // case "CustomMessage_UpdateUserAttribute":
+    // case "CustomMessage_VerifyUserAttribute":
+    // case "CustomMessage_Authentication":
+    default:
+      // Fallback to trigger source based key or a generic template
+      templateKey = baseKey; 
+      // Consider setting a generic subject or leaving the default
+      console.warn(`Using default template key and subject for trigger: ${event.triggerSource}`);
+      break;
+  }
   
   const command = new GetObjectCommand({
     Bucket: process.env.DONUSTUR_TEMPLATES_BUCKET_NAME,
-    Key: `email-templates/auth/${event.triggerSource}.html`
+    Key: templateKey
   });
   
   const response = await s3Client.send(command);
@@ -21,32 +54,6 @@ export const handler: CustomMessageTriggerHandler = async (event) => {
 
   event.response.emailMessage = emailTemplate
     .replace('${code}', code || '')
-
-  let subject = "Dönüştür";
-
-  switch (event.triggerSource) {
-    case "CustomMessage_SignUp":
-      subject = "Eposta adresini doğrula - Dönüştür";
-      break;
-    case "CustomMessage_ResendCode":
-      subject = "Eposta adresini doğrula - Dönüştür";
-      break;
-    case "CustomMessage_ForgotPassword":
-      subject = "Şifreni sıfırla - Dönüştür";
-      break;
-    case "CustomMessage_AdminCreateUser":
-      subject = "Eposta adresini doğrula - Dönüştür";
-      break;
-    case "CustomMessage_UpdateUserAttribute":
-      subject = "Eposta adresini doğrula - Dönüştür";
-      break;
-    case "CustomMessage_VerifyUserAttribute":
-      subject = "Eposta adresini doğrula - Dönüştür";
-      break;
-    case "CustomMessage_Authentication":
-      subject = "Eposta adresini doğrula - Dönüştür";
-      break;
-  }
 
   event.response.emailSubject = subject;
 
