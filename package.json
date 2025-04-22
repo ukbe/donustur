@@ -7,6 +7,7 @@
     "deploy": "npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID",
     "build": "next build",
     "build:layers": "yarn --cwd amplify/layers/manage-users run build:layer",
+    "clear": "find . -name node_modules -type d -maxdepth 3 -exec rm -rf {} \\;",
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts"
