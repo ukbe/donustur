@@ -70,8 +70,8 @@ export default function DashboardPage() {
             )}
           </p>
         </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex flex-row space-x-3">
-          <a href="/qrcode" className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2">
+          <a href="/qrcode" className="flex items-center rounded-md bg-sky-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-sky-500">
             <QrCodeIcon className="h-4 w-4 mr-1.5" />
             QR Kodum
           </a>
