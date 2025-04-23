@@ -3,11 +3,8 @@ backend:
   phases:
     build:
       commands:
-        - rm -rf node_modules
         - yarn install --frozen-lockfile
-        - cd $CODEBUILD_SRC_DIR/amplify/layers/manage-users
-        - yarn build:layer
-        - cd $CODEBUILD_SRC_DIR
+        - yarn build:layers
         - yarn ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:
   phases:

@@ -70,8 +70,12 @@ export default function DashboardPage() {
             )}
           </p>
         </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <a href="/marketplace" className="block rounded-md bg-green-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-green-500">
+        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex flex-row space-x-3">
+          <a href="/qrcode" className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+            <QrCodeIcon className="h-4 w-4 mr-1.5" />
+            QR Kodum
+          </a>
+          <a href="/marketplace" className="flex items-center rounded-md bg-green-600 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-green-500">
             Ödülleri Görüntüle
           </a>
         </div>

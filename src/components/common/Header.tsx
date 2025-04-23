@@ -46,6 +46,9 @@ export default function Header() {
             <Link href="/dashboard" className={`inline-flex items-center px-2 pt-1 text-sm font-medium ${isActive('/dashboard')}`}>
               Ana Sayfa
             </Link>
+            <Link href="/qrcode" className={`inline-flex items-center px-2 pt-1 text-sm font-medium ${isActive('/qrcode')}`}>
+              QR Kodum
+            </Link>
             <Link href="/marketplace" className={`inline-flex items-center px-2 pt-1 text-sm font-medium ${isActive('/marketplace')}`}>
               Bağış Yap
             </Link>
@@ -90,9 +93,12 @@ export default function Header() {
           </div>
 
           {/* Bottom row with navigation links */}
-          <div className="flex justify-center space-x-8 pb-2">
+          <div className="flex justify-center space-x-6 pb-2">
             <Link href="/dashboard" className={`inline-flex items-center px-2 text-sm font-medium ${isActive('/dashboard')}`}>
               Ana Sayfa
+            </Link>
+            <Link href="/qrcode" className={`inline-flex items-center px-2 text-sm font-medium ${isActive('/qrcode')}`}>
+              QR Kodum
             </Link>
             <Link href="/marketplace" className={`inline-flex items-center px-2 text-sm font-medium ${isActive('/marketplace')}`}>
               Bağış Yap

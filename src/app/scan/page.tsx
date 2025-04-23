@@ -9,33 +9,52 @@ import Logo from '@/components/common/Logo';
 function ScanContent() {
   const searchParams = useSearchParams();
   const binId = searchParams.get('bin');
+  const userId = searchParams.get('user');
   const router = useRouter();
   const {authStatus, user} = useAuthenticator();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Geri dönüşüm işlemi doğrulanıyor...');
   const [credits, setCredits] = useState(0);
   const [errorDetails, setErrorDetails] = useState('');
+  const [mode, setMode] = useState<'bin' | 'user' | null>(null);
 
   useEffect(() => {
-    // No bin ID provided, redirect to home
-    if (!binId) {
+    // Determine the mode based on URL parameters
+    if (binId) {
+      setMode('bin');
+    } else if (userId) {
+      setMode('user');
+      setMessage('Kullanıcı QR kodu tarandı. Bin taraması bekleniyor...');
+    } else {
       router.push('/');
       return;
     }
 
-    // Not authenticated, store bin ID and redirect to login
-    if (authStatus === 'unauthenticated') {
-      // Save bin ID in session storage and redirect to login
-      sessionStorage.setItem('pendingBinId', binId);
-      router.push(`/signin?bin=${binId}`);
-      return;
+    // Handle bin scanning mode
+    if (mode === 'bin' && binId) {
+      // Not authenticated, store bin ID and redirect to login
+      if (authStatus === 'unauthenticated') {
+        // Save bin ID in session storage and redirect to login
+        sessionStorage.setItem('pendingBinId', binId);
+        router.push(`/signin?bin=${binId}`);
+        return;
+      }
+
+      if (authStatus === 'authenticated' && user) {
+        processScan(binId, user.userId);
+      }
     }
 
-    if (authStatus === 'authenticated' && user) {
-      processScan(binId, user.userId);
+    // Handle user authentication mode
+    if (mode === 'user') {
+      // This would be handled by the bin's scanner system
+      // In a real environment, the bin would read this QR code,
+      // then show its own QR code for the user to scan
+      setStatus('success');
+      setMessage('Kullanıcı kimliği doğrulandı. Lütfen kutu QR kodunu taratın.');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [binId, authStatus, user, router]);
+  }, [binId, userId, authStatus, user, router, mode]);
 
   async function processScan(binId: string, userId: string) {
     try {
@@ -116,7 +135,7 @@ function ScanContent() {
         </div>
       )}
 
-      {status === 'success' && (
+      {status === 'success' && mode === 'bin' && (
         <div className="bg-green-50 p-4 rounded-lg mb-4">
           <p className="text-green-800 font-semibold">+{credits} puan hesabınıza eklendi!</p>
         </div>
