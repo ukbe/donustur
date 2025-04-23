@@ -1,5 +1,5 @@
 import Logo from '@/components/common/Logo';
-import {PencilSquareIcon, QrCodeIcon, LinkIcon, LockClosedIcon, StarIcon} from '@heroicons/react/24/outline';
+import {PencilSquareIcon, QrCodeIcon, LinkIcon, LockClosedIcon, StarIcon, UserIcon} from '@heroicons/react/24/outline';
 
 const steps = [
   {
@@ -8,13 +8,18 @@ const steps = [
     icon: PencilSquareIcon,
   },
   {
-    title: 'QR Kodu Tarayın',
-    description: 'Akıllı geri dönüşüm kutusundaki QR kodu telefonunuzun kamerası ile tarayın.',
+    title: 'Kişisel QR Kodunuzu Alın',
+    description: '"QR Kodum" sayfasından kişisel QR kodunuza erişebilirsiniz. Bu kod, geri dönüşüm kutularında kimliğinizi doğrulamak için kullanılır.',
+    icon: UserIcon,
+  },
+  {
+    title: 'Kişisel QR Kodunuzu Okutun',
+    description: 'Geri dönüşüm kutusundaki tarayıcıya kişisel QR kodunuzu okutarak kimliğinizi doğrulayın.',
     icon: QrCodeIcon,
   },
   {
-    title: 'Bağlantıya Tıklayın',
-    description: 'Telefonunuzda beliren bağlantıya tıklayarak Dönüştür uygulamasına yönlendirilirsiniz.',
+    title: 'Kutu QR Kodunu Tarayın',
+    description: 'Kimliğiniz doğrulandıktan sonra, kutudaki QR kodu telefonunuzun kamerası ile tarayın.',
     icon: LinkIcon,
   },
   {
