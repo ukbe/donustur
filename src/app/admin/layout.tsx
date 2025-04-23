@@ -50,7 +50,7 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
           <div className="flex flex-1 items-center justify-between">
             <Logo className="h-10" width={120} height={40} />
             <div className="flex items-center gap-x-4">
-              <a href="/dashboard" className="rounded-md bg-indigo-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors duration-200">
+              <a href="/dashboard" className="rounded-md bg-sky-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 transition-colors duration-200">
                 Kullanıcı Paneli
               </a>
             </div>

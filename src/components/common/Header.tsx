@@ -57,7 +57,7 @@ export default function Header() {
           {/* Right column - Admin button and logout */}
           <div className="flex-shrink-0 w-1/3 flex justify-end items-center space-x-4">
             {isAdmin && (
-              <Link href="/admin" className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors duration-200">
+              <Link href="/admin" className="rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 transition-colors duration-200">
                 Yönetici Paneli
               </Link>
             )}
@@ -79,7 +79,7 @@ export default function Header() {
             </div>
             <div className="flex items-center space-x-2">
               {isAdmin && (
-                <Link href="/admin" className="rounded-md bg-indigo-600 px-2 py-1 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors duration-200">
+                <Link href="/admin" className="rounded-md bg-sky-600 px-2 py-1 text-xs font-semibold text-white shadow-sm hover:bg-sky-500 transition-colors duration-200">
                   Yönetici
                 </Link>
               )}
