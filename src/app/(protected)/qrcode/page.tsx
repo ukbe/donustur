@@ -4,7 +4,6 @@ import {useAuthenticator} from '@aws-amplify/ui-react';
 import {useEffect, useState} from 'react';
 import {QRCodeSVG} from 'qrcode.react';
 import {getUserById} from '@/lib/api';
-import Logo from '@/components/common/Logo';
 
 export default function QRCodePage() {
   const {user} = useAuthenticator();
@@ -39,7 +38,6 @@ export default function QRCodePage() {
     <div className="min-h-screen flex flex-col items-center p-4 sm:p-6 md:p-8">
       <div className="w-full max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6 md:p-8">
         <div className="flex flex-col items-center text-center mb-6">
-          <Logo className="mb-4" width={160} height={55} />
           <h1 className="text-2xl font-semibold text-gray-900">QR Kodum</h1>
           <p className="mt-2 text-sm text-gray-600">Bu QR kodu geri dönüşüm kutularında kimlik doğrulama için kullanın.</p>
         </div>

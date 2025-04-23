@@ -2,11 +2,10 @@
 
 import Logo from '@/components/common/Logo';
 import {QrCodeIcon, GiftIcon, GlobeAltIcon} from '@heroicons/react/24/outline';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { listCauses, type Cause } from '@/lib/api';
 import Image from 'next/image';
 import { getUrl } from 'aws-amplify/storage';
-import Link from 'next/link';
 
 const features = [
   {
@@ -33,8 +32,6 @@ function CausesSlider() {
   const [causes, setCauses] = useState<Cause[]>([]);
   const [signedImageUrls, setSignedImageUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const sliderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadCauses() {
@@ -72,28 +69,6 @@ function CausesSlider() {
     loadCauses();
   }, []);
 
-  useEffect(() => {
-    // Auto-rotate slides every 5 seconds if causes exist
-    if (causes.length > 0) {
-      const interval = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % causes.length);
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [causes.length]);
-
-  const handlePrevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + causes.length) % causes.length);
-  };
-
-  const handleNextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % causes.length);
-  };
-
-  const handleDotClick = (index: number) => {
-    setCurrentSlide(index);
-  };
-
   if (loading) {
     return (
       <div className="py-10 flex justify-center">
@@ -106,82 +81,49 @@ function CausesSlider() {
     return null;
   }
 
+  // Create a duplicate array of causes to make the infinite scroll effect smoother
+  const displayCauses = [...causes, ...causes, ...causes]; // Triple the array for smooth looping
+
   return (
     <div className="relative">
-      <h2 className="text-2xl font-bold text-center text-gray-900 mb-6">Desteklediğimiz Kurumlar</h2>
-      <div className="relative overflow-hidden rounded-lg shadow-md mx-auto max-w-3xl">
+      <h2 className="text-2xl font-bold text-center text-gray-900 mb-6">Desteklenen Kuruluşlar</h2>
+      <div className="relative overflow-hidden mx-auto max-w-6xl h-24 bg-white rounded-lg shadow-md">
         <div 
-          ref={sliderRef}
-          className="flex transition-transform duration-500 ease-in-out" 
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          className="absolute flex space-x-12" 
+          style={{
+            animation: 'marquee 120s linear infinite',
+            whiteSpace: 'nowrap',
+          }}
         >
-          {causes.map((cause) => (
-            <div key={cause.id} className="w-full flex-shrink-0">
-              <div className="bg-white p-6 text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="w-32 h-32 rounded-md overflow-hidden flex items-center justify-center bg-gray-50">
-                    {cause.logoUrl && signedImageUrls[cause.logoUrl] ? (
-                      <Image
-                        src={signedImageUrls[cause.logoUrl]}
-                        alt={cause.name}
-                        width={128}
-                        height={128}
-                        className="object-contain"
-                      />
-                    ) : (
-                      <div className="text-4xl text-green-600 font-bold">
-                        {cause.name.charAt(0)}
-                      </div>
-                    )}
-                  </div>
+          {displayCauses.map((cause, index) => (
+            <div key={`${cause.id}-${index}`} className="flex-shrink-0 h-24 w-32 flex items-center justify-center p-2">
+              {cause.logoUrl && signedImageUrls[cause.logoUrl] ? (
+                <Image
+                  src={signedImageUrls[cause.logoUrl]}
+                  alt={cause.name}
+                  width={96}
+                  height={64}
+                  className="object-contain max-h-full"
+                />
+              ) : (
+                <div className="text-4xl text-green-600 font-bold w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center">
+                  {cause.name.charAt(0)}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{cause.name}</h3>
-                <p className="text-gray-600 mb-4 line-clamp-3">{cause.description}</p>
-                <div className="text-green-600 font-medium mb-3">{cause.credits} puan değerinde destek</div>
-                <Link 
-                  href="/signin" 
-                  className="inline-block px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-500 transition-colors"
-                >
-                  Desteklemek İçin Giriş Yap
-                </Link>
-              </div>
+              )}
             </div>
           ))}
         </div>
-
-        {/* Navigation arrows */}
-        <button 
-          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md hover:bg-white transition-colors"
-          onClick={handlePrevSlide}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-800">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-        </button>
-        
-        <button 
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md hover:bg-white transition-colors"
-          onClick={handleNextSlide}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-800">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </button>
-
-        {/* Dots indicator */}
-        <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2">
-          {causes.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => handleDotClick(index)}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                index === currentSlide ? 'bg-green-600' : 'bg-gray-300'
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
       </div>
+      <style jsx>{`
+        @keyframes marquee {
+          0% {
+            transform: translateX(0%);
+          }
+          100% {
+            transform: translateX(-200%);
+          }
+        }
+      `}</style>
     </div>
   );
 }
