@@ -112,6 +112,7 @@ export default function DashboardPage() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Konum</th>
+                        <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Kutu</th>
                         <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Zaman</th>
                         <th className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Puan</th>
                       </tr>
@@ -121,6 +122,9 @@ export default function DashboardPage() {
                         <tr key={scan.id}>
                           <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                             {scan.binLocation}
+                          </td>
+                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                            {scan.binName || 'Bilinmeyen Kutu'}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                             {new Date(scan.timestamp).toLocaleString('tr-TR')}

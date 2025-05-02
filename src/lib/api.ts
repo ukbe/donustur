@@ -18,21 +18,78 @@ export type Scan = {
   timestamp: string;
   credits: number;
   binLocation: string;
+  binId: string;
+  binName?: string;
 };
 
 export async function getUserScans(userId: string): Promise<Scan[]> {
-  const response = await client.models.Scan.list({
-    filter: {
-      userId: {eq: userId}
+  // Use the more efficient implementation
+  return getUserScansWithBinNames(userId);
+}
+
+export async function getUserScansWithBinNames(userId: string): Promise<Scan[]> {
+  try {
+    // Get all scans for this user
+    const response = await client.models.Scan.list({
+      filter: {
+        userId: {eq: userId}
+      }
+    });
+    
+    // If no scans, return empty array
+    if (!response.data || response.data.length === 0) {
+      return [];
     }
-  });
-  return response.data.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
+    // Sort scans by timestamp (newest first)
+    const scans = response.data.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+    
+    // Extract all binIds from scans (using Set to remove duplicates)
+    const binIds = [...new Set(scans.filter(scan => scan.binId).map(scan => scan.binId))];
+    
+    // If no binIds, return just the sorted scans
+    if (binIds.length === 0) {
+      return scans;
+    }
+    
+    // Batch fetch all bins in a single request instead of fetching them one by one
+    const binsResponse = await Promise.all(
+      binIds.map(binId => getBin(binId))
+    );
+    
+    // Create a map of binId to bin object for quick lookups
+    const binsMap = new Map();
+    binsResponse.forEach(bin => {
+      if (bin) {
+        binsMap.set(bin.id, bin);
+      }
+    });
+    
+    // Add bin names to scans
+    const scansWithBinNames = scans.map(scan => {
+      if (scan.binId && binsMap.has(scan.binId)) {
+        const bin = binsMap.get(scan.binId);
+        return {
+          ...scan,
+          binName: bin.name
+        };
+      }
+      return scan;
+    });
+    
+    return scansWithBinNames;
+  } catch (error) {
+    console.error('Error getting user scans with bin names:', error);
+    return [];
+  }
 }
 
 export async function getUserStats(userId: string) {
   try {
-    // Get all scans
-    const scans = await getUserScans(userId);
+    // Get all scans using the optimized function
+    const scans = await getUserScansWithBinNames(userId);
     
     // Get all redemptions for this user
     const redemptionsResponse = await client.models.Redemption.list({
