@@ -30,11 +30,11 @@ export async function getUserScans(userId: string): Promise<Scan[]> {
 export async function getUserScansWithBinNames(userId: string): Promise<Scan[]> {
   try {
     // Get all scans for this user
-    const response = await client.models.Scan.list({
-      filter: {
-        userId: {eq: userId}
-      }
-    });
+  const response = await client.models.Scan.list({
+    filter: {
+      userId: {eq: userId}
+    }
+  });
     
     // If no scans, return empty array
     if (!response.data || response.data.length === 0) {
@@ -964,5 +964,103 @@ export async function getAdminStats(): Promise<{
       activeBins: 0,
       totalBins: 0
     };
+  }
+}
+
+export type Redemption = {
+  id: string;
+  userId: string;
+  itemId: string;
+  credits: number;
+  timestamp: string;
+  causeName?: string;
+  type: 'redemption';
+};
+
+export async function getUserRedemptions(userId: string): Promise<Redemption[]> {
+  try {
+    // Get all redemptions for this user
+    const response = await client.models.Redemption.list({
+      filter: {
+        userId: { eq: userId }
+      }
+    });
+    
+    // Sort redemptions by timestamp (newest first)
+    const redemptions = response.data.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+    
+    // Extract all itemIds (causeIds) from redemptions
+    const causeIds = [...new Set(redemptions.map(redemption => redemption.itemId))];
+    
+    // Create a map of causeId to cause details for quick lookups
+    const causesMap = new Map();
+    
+    // Batch fetch all causes
+    if (causeIds.length > 0) {
+      const causesPromises = causeIds.map(async (causeId) => {
+        try {
+          return await getCause(causeId);
+        } catch (error) {
+          console.error(`Error fetching cause ${causeId}:`, error);
+          return null;
+        }
+      });
+      
+      const causes = await Promise.all(causesPromises);
+      
+      // Populate the map with valid causes
+      causes.forEach(cause => {
+        if (cause) {
+          causesMap.set(cause.id, cause);
+        }
+      });
+    }
+    
+    // Add type and cause name to redemptions
+    const redemptionsWithDetails = redemptions.map(redemption => {
+      const cause = causesMap.get(redemption.itemId);
+      return {
+        ...redemption,
+        causeName: cause ? cause.name : 'Bilinmeyen Kuruluş',
+        type: 'redemption' as const
+      };
+    });
+    
+    return redemptionsWithDetails;
+  } catch (error) {
+    console.error('Error getting user redemptions:', error);
+    return [];
+  }
+}
+
+// Extend the Scan type to include a type field for differentiation
+export type ScanWithType = Scan & { type: 'scan' };
+
+// Function to get combined activity (scans and redemptions) for a user
+export async function getUserActivity(userId: string): Promise<(ScanWithType | Redemption)[]> {
+  try {
+    // Get both scans and redemptions
+    const [scans, redemptions] = await Promise.all([
+      getUserScans(userId),
+      getUserRedemptions(userId),
+    ]);
+    
+    // Add type to scans for differentiation
+    const scansWithType: ScanWithType[] = scans.map(scan => ({
+      ...scan,
+      type: 'scan' as const
+    }));
+    
+    // Combine and sort by timestamp (newest first)
+    const combinedActivity = [...scansWithType, ...redemptions].sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+    
+    return combinedActivity;
+  } catch (error) {
+    console.error('Error getting user activity:', error);
+    return [];
   }
 } 

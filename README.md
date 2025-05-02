@@ -7,7 +7,7 @@ Dönüştür, geri dönüşümü teşvik eden bir ödül sistemi sunan modern bi
 - **QR Kod Sistemi**: Kullanıcı kimlik doğrulama ve geri dönüşüm kutusu tanımlama için QR kod kullanımı
 - **Puan Sistemi**: Her geri dönüşüm işlemi için puan kazanma
 - **Kullanıcı Paneli**: Kazanılan puanları ve geri dönüşüm geçmişini görüntüleme
-- **Bağış Pazarı**: Kazanılan puanları STK'lara bağışlama imkanı
+- **Bağış Seçenekleri**: Kazanılan puanları STK'lara bağışlama imkanı
 - **Yönetici Paneli**: Uygulama verilerini yönetmek için kapsamlı yönetici arayüzü
 
 ## 🛠️ Teknoloji Altyapısı
@@ -19,7 +19,7 @@ Dönüştür, geri dönüşümü teşvik eden bir ödül sistemi sunan modern bi
 - **Depolama**: Amazon S3
 - **Dağıtım**: AWS Amplify Hosting
 
-## 📋 Önkoşullar
+## 📋 Gereksiminler
 
 - Node.js 18.x veya daha yeni
 - AWS hesabı
@@ -51,9 +51,9 @@ yarn dev
 
 Tarayıcınızda [http://localhost:3000](http://localhost:3000) adresini açarak uygulamayı görüntüleyebilirsiniz.
 
-## 🚀 Dağıtım
+## 🚀 Kurulum
 
-Uygulamayı AWS Amplify'a dağıtmak için:
+Uygulamayı AWS Amplify'a kurmak için:
 
 ```bash
 yarn deploy
@@ -81,27 +81,27 @@ yarn deploy
 
 ### 🎁 Puanlarınızı Kullanma
 
-1. "Ödülleri Görüntüle" butonuna tıklayarak Bağış Pazarına gidin
+1. "Bağış Yap" butonuna tıklayarak kurumlar sayfasına gidin
 2. İstediğiniz STK'yı seçin ve "Bağış Yap" butonuna tıklayın
 3. Bağış onayını verin
-4. Puanlarınız seçtiğiniz projeye bağışlanacaktır
+4. Puanlarınız seçtiğiniz kuruma bağışlanacaktır
 
 ## 📁 Proje Yapısı
 
 ```
 src/
-├── app/                # Next.js sayfa yönlendiricisi
+├── app/                # Next.js App Router
 │   ├── page.tsx        # Ana sayfa
-│   ├── (auth)/         # Kimlik doğrulama sayfaları
-│   ├── (protected)/    # Korumalı kullanıcı sayfaları
+│   ├── (auth)/         # Kayıt ve giriş sayfaları
+│   ├── (protected)/    # Kullanıcı sayfaları
 │   │   ├── dashboard/  # Kullanıcı paneli
 │   │   ├── qrcode/     # QR kod sayfası
-│   │   └── marketplace/# Bağış pazarı
+│   │   └── marketplace/# Bağış kurumları
 │   ├── admin/          # Yönetici paneli
 │   └── scan/           # QR kod tarama işlemi
-├── components/         # React bileşenleri
+├── components/         # Arayüz bileşenleri
 ├── lib/                # Yardımcı fonksiyonlar ve API
-└── types/              # TypeScript tip tanımlamaları
+└── types/              # TypeScript tanımlamaları
 
 amplify/                # AWS Amplify yapılandırması
 ├── data/               # Veri modelleri ve şema
@@ -113,7 +113,7 @@ amplify/                # AWS Amplify yapılandırması
 Uygulama aşağıdaki ana API işlevlerini kullanır:
 
 ### Kullanıcı İşlemleri
-- `getUserScans`: Kullanıcı tarama geçmişini getirir
+- `getUserScans`: Kullanıcı QR kod tarama geçmişini getirir
 - `getUserStats`: Kullanıcı istatistiklerini (toplam puan, kullanılan puan vb.) getirir
 - `getUserById`: Kullanıcı bilgilerini getirir
 
@@ -141,7 +141,7 @@ Uygulama, AWS Cognito tabanlı kimlik doğrulama kullanır ve üç tür yetkilen
 - `User`: Kullanıcı bilgileri
 - `Scan`: Geri dönüşüm taramaları
 - `Bin`: Geri dönüşüm kutuları
-- `Cause`: STK'lar ve bağış projeler
+- `Cause`: STK'lar ve bağış projeleri
 - `Redemption`: Bağış işlemleri
 
 ### QR Kod Sistemi
@@ -153,11 +153,3 @@ Sistem iki tür QR kod kullanır:
 ### API Performans Optimizasyonu
 
 Kullanıcı taramalarını getirirken, sistem önbelleğe alma ve toplu istekler kullanarak performansı optimize eder.
-
-## 🤝 Destek ve İletişim
-
-Sorularınız veya önerileriniz için lütfen [iletişim bilgisi] ile iletişime geçin.
-
-## 📜 Lisans
-
-[Lisans bilgisi]

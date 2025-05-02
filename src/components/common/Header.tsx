@@ -44,7 +44,7 @@ export default function Header() {
           {/* Center column - Main navigation */}
           <div className="w-1/3 flex justify-center space-x-6">
             <Link href="/dashboard" className={`inline-flex items-center px-2 pt-1 text-sm font-medium ${isActive('/dashboard')}`}>
-              Ana Sayfa
+              Dönüşüm Sayfam
             </Link>
             <Link href="/qrcode" className={`inline-flex items-center px-2 pt-1 text-sm font-medium ${isActive('/qrcode')}`}>
               QR Kodum
@@ -95,7 +95,7 @@ export default function Header() {
           {/* Bottom row with navigation links */}
           <div className="flex justify-center space-x-6 pb-2">
             <Link href="/dashboard" className={`inline-flex items-center px-2 text-sm font-medium ${isActive('/dashboard')}`}>
-              Ana Sayfa
+              Dönüşüm Sayfam
             </Link>
             <Link href="/qrcode" className={`inline-flex items-center px-2 text-sm font-medium ${isActive('/qrcode')}`}>
               QR Kodum
