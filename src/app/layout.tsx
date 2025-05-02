@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Dönüştür",
   description: "Geri dönüşüm ile dünyayı değiştirin",
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.ico',
   },
 };
 
